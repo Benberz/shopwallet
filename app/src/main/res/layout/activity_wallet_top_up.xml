@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/gradient_background"
+    tools:context=".walletTopUp">
+
+    <!-- AppBar with Toolbar -->
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/walletTopUpAppBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/walletTopUpToolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?android:attr/actionBarSize"
+            android:background="#F5FFFFFF"
+            android:title="@string/authentication_type_text"
+            android:titleTextColor="@color/white"
+            app:navigationIcon="@drawable/ic_baseline_arrow_back_ios_24" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- EditText for Amount Input -->
+    <EditText
+        android:id="@+id/creditAmount"
+        android:layout_width="367dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="48dp"
+        android:autofillHints="@string/enter_amount"
+        android:background="@drawable/rounded_edittext"
+        android:drawableStart="@drawable/ic_baseline_money_24"
+        android:hint="@string/enter_amount"
+        android:inputType="numberDecimal"
+        android:padding="12dp"
+        android:textColorHint="#757575"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/walletTopUpAppBarLayout" />
+
+    <!-- TextView for Minimum Amount Note -->
+
+    <!-- Button for Next Action -->
+    <TextView
+        android:id="@+id/noteDeductionTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/minimum_amount_note"
+        android:textColor="#F3E5F5"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="@+id/creditAmount"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="@+id/creditAmount"
+        app:layout_constraintTop_toBottomOf="@+id/creditAmount"
+        tools:ignore="TextContrastCheck" />
+
+    <Button
+        android:id="@+id/submitMobileReloadButton"
+        android:layout_width="366dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="32dp"
+        android:background="@drawable/rounded_button"
+        android:text="@string/submit"
+        android:textColor="@color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/noteDeductionTextView" />
+
+    <ProgressBar
+        android:id="@+id/topUpProgressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:indeterminateTint="@color/purple_700"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/submitMobileReloadButton" />
+
+    <TextView
+        android:id="@+id/topUpProcessingTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/processing_status_text"
+        android:textColor="#F3E5F5"
+        app:layout_constraintEnd_toEndOf="@+id/topUpProgressBar"
+        app:layout_constraintStart_toStartOf="@+id/topUpProgressBar"
+        app:layout_constraintTop_toBottomOf="@+id/topUpProgressBar"
+        tools:ignore="TextContrastCheck" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

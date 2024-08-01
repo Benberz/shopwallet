@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bottom_sheet_dialog_background"
+    android:backgroundTint="@android:color/transparent"
+    android:backgroundTintMode="src_over"
+    android:foregroundTint="@android:color/transparent"
+    android:foregroundTintMode="src_over"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/walletIdEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:autofillHints=""
+        android:background="@drawable/rounded_edittext"
+        android:drawableStart="@drawable/ic_baseline_123_24"
+        android:drawablePadding="4dp"
+        android:hint="@string/wallet_id"
+        android:inputType="number|text|phone"
+        android:minHeight="48dp"
+        android:textColorHint="#757575"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/qrCodeImageView" />
+
+    <EditText
+        android:id="@+id/requestedAmountEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="36dp"
+        android:autofillHints=""
+        android:background="@drawable/rounded_edittext"
+        android:drawableStart="@drawable/ic_baseline_money_24"
+        android:drawablePadding="4dp"
+        android:hint="@string/requested_amount"
+        android:inputType="numberDecimal"
+        android:minHeight="48dp"
+        android:padding="4dp"
+        android:textColorHint="#757575"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.093"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/walletHolderTextView" />
+
+    <Button
+        android:id="@+id/generateQRCodeButton"
+        android:layout_width="198dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/rounded_button"
+        android:text="@string/submit"
+        android:textColor="@color/chipBackgroundColor"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/requestedAmountEditText"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <Button
+        android:id="@+id/cancelQRCodeButton"
+        android:layout_width="152dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/rounded_button_gray"
+        android:text="@string/clear_text"
+        android:textColor="#5D4037"
+        app:layout_constraintBottom_toBottomOf="@+id/generateQRCodeButton"
+        app:layout_constraintEnd_toStartOf="@+id/generateQRCodeButton"
+        app:layout_constraintHorizontal_bias="0.355"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/requestedAmountEditText"
+        app:layout_constraintVertical_bias="0.0"
+        tools:ignore="TextContrastCheck" />
+
+    <ImageView
+        android:id="@+id/qrCodeImageView"
+        android:layout_width="0dp"
+        android:layout_height="340dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="24dp"
+        android:contentDescription="@string/qr_code"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.516"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/requestPaymentPromptTextView"
+        app:srcCompat="@drawable/ic_baseline_qr_code_24" />
+
+    <TextView
+        android:id="@+id/requestPaymentPromptTextView"
+        android:layout_width="361dp"
+        android:layout_height="51dp"
+        android:gravity="center|center_horizontal|center_vertical"
+        android:text="@string/enter_wallet_id_and_amount_to_request_payment"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/walletHolderTextView"
+        android:layout_width="280dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="32dp"
+        android:text="@string/wallet_holder"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.474"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/walletIdEditText" />
+
+    <ImageView
+        android:id="@+id/walletHolderIconImageView"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginEnd="4dp"
+        android:contentDescription="@string/wallet_holder_icon"
+        app:layout_constraintBottom_toBottomOf="@+id/walletHolderTextView"
+        app:layout_constraintEnd_toStartOf="@+id/walletHolderTextView"
+        app:layout_constraintHorizontal_bias="0.8"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/walletHolderTextView"
+        app:layout_constraintVertical_bias="0.0"
+        app:srcCompat="@drawable/ic_baseline_person_24"
+        tools:ignore="ImageContrastCheck" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

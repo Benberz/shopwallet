@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/dashboard"
+    tools:context=".ConfirmRemoveDevice">
+
+    <ImageView
+        android:id="@+id/cautionImageView"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginTop="188dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_caution_risk"
+        android:contentDescription="@string/caution_icon_image_view" />
+
+    <TextView
+        android:id="@+id/areYouSureTextView"
+        android:layout_width="295dp"
+        android:layout_height="54dp"
+        android:layout_marginTop="128dp"
+        android:gravity="center_horizontal"
+        android:text="@string/are_you_sure_text"
+        android:textSize="20sp"
+        android:textStyle="normal|bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/cautionImageView" />
+
+    <TextView
+        android:id="@+id/youWillBeRequiredTextView"
+        android:layout_width="297dp"
+        android:layout_height="55dp"
+        android:layout_marginTop="24dp"
+        android:gravity="center_horizontal"
+        android:shadowColor="#FF9800"
+        android:text="@string/you_will_be_require_text"
+        android:textColor="#CDDC39"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="@+id/areYouSureTextView"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="@+id/areYouSureTextView"
+        app:layout_constraintTop_toBottomOf="@+id/areYouSureTextView" />
+
+    <Button
+        android:id="@+id/confirmButton"
+        android:layout_width="165dp"
+        android:layout_height="54dp"
+        android:layout_marginBottom="52dp"
+        android:text="@string/confirm_button_text"
+        android:textColor="@color/white"
+        android:textColorHint="#292827"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/youWillBeRequiredTextView"
+        app:layout_constraintVertical_bias="1.0" />
+</androidx.constraintlayout.widget.ConstraintLayout>

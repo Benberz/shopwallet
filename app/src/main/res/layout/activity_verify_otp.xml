@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/verifyOTPConstraintLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/pagebg"
+    tools:context=".VerifyOTP">
+
+    <ImageView
+        android:id="@+id/authenticationHistoryImageViewLogo"
+        android:layout_width="117dp"
+        android:layout_height="108dp"
+        android:contentDescription="@string/shopwallet_logo_description"
+        android:src="@drawable/shop_wallet_logo"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.118" />
+
+    <TextView
+        android:id="@+id/verifyOTPHeaderTextView"
+        android:layout_width="133dp"
+        android:layout_height="26dp"
+        android:layout_marginTop="40dp"
+        android:gravity="center|center_horizontal"
+        android:text="@string/verify_otp_header_text"
+        android:textColor="#000000"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/authenticationHistoryImageViewLogo" />
+
+    <LinearLayout
+        android:id="@+id/otpEmailLinearLayout"
+        android:layout_width="318dp"
+        android:layout_height="78dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/rounded_background"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.495"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/verifyOTPHeaderTextView">
+
+        <TextView
+            android:id="@+id/yourOTPHasBeenSentTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:text="@string/your_otp_has_been_sent_text"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/otpEmailTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|center_horizontal"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="#3EFFFFFF"
+            android:gravity="center|center_horizontal"
+            android:text="@string/sentotp_email_text"
+            android:textColor="#06236A"
+            android:textSize="18sp"
+            android:textStyle="normal|bold" />
+    </LinearLayout>
+
+    <TableRow
+        android:id="@+id/otpDigitsTableRow"
+        android:layout_width="363dp"
+        android:layout_height="67dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="44dp"
+        android:layout_marginEnd="12dp"
+        android:stretchColumns="*"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.489"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/otpEmailLinearLayout">
+
+
+        <EditText
+            android:id="@+id/otpDigit1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:layout_weight="1"
+            android:autofillHints=""
+            android:background="@drawable/rounded_edittext"
+            android:gravity="center"
+            android:hint="@string/otp_digit"
+            android:inputType="number"
+            android:maxLength="1"
+            android:padding="16dp"
+            android:textColorHint="#D32F2F"
+            tools:ignore="LabelFor,SpeakableTextPresentCheck" />
+
+        <EditText
+            android:id="@+id/otpDigit2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:layout_weight="1"
+            android:autofillHints=""
+            android:background="@drawable/rounded_edittext"
+            android:gravity="center"
+            android:hint="@string/otp_digit"
+            android:inputType="number"
+            android:labelFor="@id/otpDigit2"
+            android:maxLength="1"
+            android:padding="16dp"
+            android:textColorHint="#D81B60"
+            tools:ignore="SpeakableTextPresentCheck" />
+
+        <EditText
+            android:id="@+id/otpDigit3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:layout_weight="1"
+            android:autofillHints=""
+            android:background="@drawable/rounded_edittext"
+            android:gravity="center"
+            android:inputType="number"
+            android:labelFor="@id/otpDigit3"
+            android:maxLength="1"
+            android:padding="16dp"
+            tools:ignore="SpeakableTextPresentCheck" />
+
+        <EditText
+            android:id="@+id/otpDigit4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:layout_weight="1"
+            android:autofillHints=""
+            android:background="@drawable/rounded_edittext"
+            android:gravity="center"
+            android:inputType="number"
+            android:labelFor="@id/otpDigit4"
+            android:maxLength="1"
+            android:padding="16dp"
+            tools:ignore="SpeakableTextPresentCheck" />
+
+        <EditText
+            android:id="@+id/otpDigit5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:layout_weight="1"
+            android:autofillHints=""
+            android:background="@drawable/rounded_edittext"
+            android:gravity="center"
+            android:inputType="number"
+            android:labelFor="@id/otpDigit5"
+            android:maxLength="1"
+            android:padding="16dp"
+            tools:ignore="SpeakableTextPresentCheck" />
+
+        <EditText
+            android:id="@+id/otpDigit6"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:layout_weight="1"
+            android:autofillHints=""
+            android:background="@drawable/rounded_edittext"
+            android:gravity="center"
+            android:inputType="number"
+            android:labelFor="@id/otpDigit6"
+            android:maxLength="1"
+            android:padding="16dp"
+            tools:ignore="SpeakableTextPresentCheck" />
+
+    </TableRow>
+
+    <TextView
+        android:id="@+id/timeTextView"
+        android:layout_width="35dp"
+        android:layout_height="21dp"
+        android:layout_marginStart="272dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/time_to_expiry_text"
+        android:textColor="#000000"
+        app:layout_constraintBottom_toTopOf="@+id/selectAuthTypeNextButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/otpDigitsTableRow"
+        app:layout_constraintVertical_bias="0.003" />
+
+    <TextView
+        android:id="@+id/timeRemainingTextView"
+        android:layout_width="75dp"
+        android:layout_height="23dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/time_remaining_text"
+        android:textColor="#06236A"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.04"
+        app:layout_constraintStart_toEndOf="@+id/timeTextView"
+        app:layout_constraintTop_toBottomOf="@+id/otpDigitsTableRow" />
+
+    <TextView
+        android:id="@+id/resendOTPTextView"
+        android:layout_width="49dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="152dp"
+        android:layout_marginTop="84dp"
+        android:text="@string/resend_link"
+        android:textColor="#06236A"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/selectAuthTypeNextButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/otpDigitsTableRow"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <TextView
+        android:id="@+id/otpCodeTextView"
+        android:layout_width="100dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="6dp"
+        android:text="@string/otp_code_text"
+        android:textAlignment="textStart"
+        android:textColor="#000000"
+        app:flow_horizontalAlign="center"
+        app:layout_constraintBaseline_toBaselineOf="@+id/resendOTPTextView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/resendOTPTextView" />
+
+    <Button
+        android:id="@+id/selectAuthTypeNextButton"
+        android:layout_width="206dp"
+        android:layout_height="48dp"
+        android:background="@drawable/rounded_button"
+        android:text="@string/next_text"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/otpDigitsTableRow"
+        app:layout_constraintVertical_bias="0.84" />
+
+    <ProgressBar
+        android:id="@+id/verifyOtpProgressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminateTint="@color/purple_700"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

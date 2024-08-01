@@ -1,0 +1,118 @@
+{
+  "project_info": {
+    "project_number": "603111437362",
+    "project_id": "shopwallet-backoffice",
+    "storage_bucket": "shopwallet-backoffice.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:603111437362:android:83272219cecffc8b37782b",
+        "android_client_info": {
+          "package_name": "com.shopwallet.ituchallenger"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "603111437362-qfvbj60fco4rgc8gsob6ou0p2np1h4hr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmBPSl0Afko3jshBGE8v36twysANT_nrE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "603111437362-qfvbj60fco4rgc8gsob6ou0p2np1h4hr.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "603111437362-alppk7avisgmcvic3jsstv4d1en68dfj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.shopwalletpos.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:603111437362:android:a970a1ad7db1d29a37782b",
+        "android_client_info": {
+          "package_name": "com.shopwalletapp.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "603111437362-qfvbj60fco4rgc8gsob6ou0p2np1h4hr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmBPSl0Afko3jshBGE8v36twysANT_nrE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "603111437362-qfvbj60fco4rgc8gsob6ou0p2np1h4hr.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "603111437362-alppk7avisgmcvic3jsstv4d1en68dfj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.shopwalletpos.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:603111437362:android:bdc9af9ac3b689ca37782b",
+        "android_client_info": {
+          "package_name": "com.shopwalletpos.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "603111437362-qfvbj60fco4rgc8gsob6ou0p2np1h4hr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmBPSl0Afko3jshBGE8v36twysANT_nrE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "603111437362-qfvbj60fco4rgc8gsob6ou0p2np1h4hr.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "603111437362-alppk7avisgmcvic3jsstv4d1en68dfj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.shopwalletpos.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
