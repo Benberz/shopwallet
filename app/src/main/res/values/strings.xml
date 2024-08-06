@@ -33,9 +33,9 @@
     <string name="wallet_topup">Wallet Top Up</string>
     <string name="mobile_reload">Mobile Reload</string>
     <string name="money_transfer">Money Transfer</string>
-    <string name="card_holder">Muwarrah Ali Shiekh Khan</string>
+    <string name="card_holder">First Name Last Name</string>
     <string name="card_expiry">05/28</string>
-    <string name="card_number">**** **** **** 8877</string>
+    <string name="card_number">XXX XXX 8877</string>
     <string name="transaction_title">Transaction Title</string>
     <string name="transaction_amount">Transaction Amount</string>
     <string name="transaction_date">Transaction Date</string>
@@ -78,7 +78,7 @@
     <string name="do_you_want_to_delete_account">Do you want to delete user information?</string>
     <string name="press_yes_to_delete_your_information">Press [Yes] to delete your information.</string>
     <string name="enter_amount">Enter Amount</string>
-    <string name="minimum_amount_note">Minimum Amount is RM10.0</string>
+    <string name="minimum_amount_note">Minimum Amount is NGN 10.0</string>
     <string name="submit">Submit</string>
     <string name="note_deduction">Note: Deductions will be made from your eWallet balance</string>
     <string name="recipients_name">Recipient\'s Name</string>
@@ -107,7 +107,7 @@
     <string name="biometric_checkmark_icon">Biometric Checkmark Icon</string>
     <string name="device_re_register_logo_image">Device Re-register logo image</string>
     <string name="animated_gif_for_authenticating_image_view">Animated GIF for Authenticating Image View</string>
-    <string name="authenticating">Authenticating &amp;#8230</string>
+    <string name="authenticating">Authenticating ...</string>
     <string name="auth_success_text">Authentication Successful</string>
     <string name="balance">Balance</string>
     <string name="your_balance">Your Balance</string>
@@ -123,8 +123,8 @@
     <string name="linked_check_mark">linked Check Mark</string>
     <string name="failed_text">Failed</string>
     <string name="linked_string">Linked</string>
-    <string name="processing_status_text">Processing&#8230;</string>
-    <string name="ellipsis">&#8230;</string>
+    <string name="processing_status_text">Processing...</string>
+    <string name="ellipsis">...</string>
     <string name="wallet_number">Wallet Number</string>
     <string name="no_recent_transactions">No Recent Transactions</string>
     <string name="no_wallet_id_found">No Wallet ID found</string>
@@ -140,7 +140,7 @@
     <string name="wallet_id">Wallet ID</string>
     <string name="xxx_xxx_xxxx">XXX-XXX-XXXX</string>
     <string name="request_payment">Request Payment</string>
-    <string name="waiting_for_payment">Waiting for Payment&#8230;</string>
+    <string name="waiting_for_payment">Waiting for Payment...</string>
     <string name="ngn">NGN</string>
     <string name="naira_svg">naira svg image</string>
     <string name="qr_code">QR Code</string>
@@ -152,7 +152,7 @@
     <string name="scan_to_pay_button">Scan to pay requested amount</string>
     <string name="scan_to_pay_text">Scan to Pay Amount</string>
     <string name="close_scan_pay_qr_button">Close Button for Scan to Pay with QR code</string>
-    <string name="process_requested_amount_text">Processing requested amount&#8230;</string>
+    <string name="process_requested_amount_text">Processing requested amount...</string>
     <string name="log_out">Logout</string>
     <string name="result_icon_text">status icon for otp authentication</string>
     <string name="totp_code">TOTP Code</string>

@@ -81,8 +81,10 @@ public class FirebasePushService extends FirebaseMessagingService {
                     // Send broadcast to trigger authentication in an activity
                     Intent authIntent = new Intent(ACTION_AUTHENTICATE);
                     authIntent.putExtra("authType", authType);
+                    authIntent.putExtra("broadcastId", String.valueOf(System.currentTimeMillis())); // Adding a unique identifier
                     sendBroadcast(authIntent);
                     Log.e(TAG, "Broadcast Sent: " + authType);
+                    Log.e(TAG, "Broadcast ID: " + System.currentTimeMillis());
                 } else {
                     Log.d(TAG, "Broadcast throttled: " + authType);
                 }

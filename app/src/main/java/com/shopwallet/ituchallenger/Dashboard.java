@@ -77,6 +77,9 @@ public class Dashboard extends AppCompatActivity {
 
     public static final String ACTION_AUTHENTICATE = "com.shopwallet.ituchallenger.ACTION_AUTHENTICATE";
     private boolean isReceiverRegistered = false;
+    private long lastReceivedBroadcastTime = 0;
+    private static final long BROADCAST_RECEIVE_THRESHOLD_MS = 1000; // 2 seconds
+    private static String lastBroadcastId = "";
     // private String channelKey;
 
     public static final String ACTION_SHOW_SNACKBAR = "com.shopwallet.ituchallenger.ACTION_SHOW_SNACKBAR";
@@ -86,14 +89,28 @@ public class Dashboard extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (ACTION_AUTHENTICATE.equals(intent.getAction())) {
-                Log.e(TAG, "Broadcast Received from FirebasePushService");
-                String authType = intent.getStringExtra("authType");
-                // channelKey = intent.getStringExtra("channel_key");
+                String broadcastId = intent.getStringExtra("broadcastId");
+                Log.e(TAG, "broadcastId (Received): " + broadcastId);
 
-                if ("3".equals(authType)) {
-                    performBiometricAuth();
-                } else if ("4".equals(authType)) {
-                    performPinPatternAuth();
+                if (broadcastId != null && !broadcastId.equals(lastBroadcastId) &&
+                        System.currentTimeMillis() - lastReceivedBroadcastTime > BROADCAST_RECEIVE_THRESHOLD_MS) {
+
+                    lastBroadcastId = broadcastId;
+                    lastReceivedBroadcastTime = System.currentTimeMillis();
+
+                    Log.e(TAG, "lastBroadcastId (Received): " + lastBroadcastId);
+
+                    Log.e(TAG, "***Broadcast Received from FirebasePushService");
+                    String authType = intent.getStringExtra("authType");
+
+                    if ("3".equals(authType)) {
+                        performBiometricAuth();
+                    } else if ("4".equals(authType)) {
+                        performPinPatternAuth();
+                    }
+                } else {
+                    Log.e(TAG, "Duplicate or too frequent broadcast received, ignoring.");
+                    Log.e(TAG, "broadcastId (Received & Ignored)********: " + broadcastId);
                 }
             }
         }
@@ -115,6 +132,7 @@ public class Dashboard extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.e(TAG, "onCreate() fired!!!>>>>");
         setContentView(R.layout.activity_dashboard);
 
         swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
@@ -187,6 +205,12 @@ public class Dashboard extends AppCompatActivity {
 
         // Unregister the BroadcastReceiver
         unregisterReceiver(snackbarReceiver);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.e(TAG, "onResume() fired!!!");
     }
 
     private void showSnackbar(String message) {
@@ -555,8 +579,8 @@ public class Dashboard extends AppCompatActivity {
                     startActivity(new Intent(this, QRCodeAuth.class));
                     return true;
                 case R.id.nav_otp_auth:
-                    performAuthenticationAndNavigate(userKey, OtpAuth.class);
-                    // startActivity(new Intent(this, OtpAuth.class));
+                    // performAuthenticationAndNavigate(userKey, OtpAuth.class);
+                    startActivity(new Intent(this, OtpAuth.class));
                     if (isReceiverRegistered) {
                         unregisterReceiver(authReceiver);
                         unregisterReceiver(snackbarReceiver);

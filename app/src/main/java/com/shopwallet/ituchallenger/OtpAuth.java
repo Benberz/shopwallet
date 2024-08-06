@@ -1,5 +1,6 @@
 package com.shopwallet.ituchallenger;
 
+import android.annotation.SuppressLint;
 import android.app.KeyguardManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -31,6 +32,7 @@ import com.fnsv.bsa.sdk.BsaSdk;
 import com.fnsv.bsa.sdk.callback.SdkAuthResponseCallback;
 import com.fnsv.bsa.sdk.callback.SdkResponseCallback;
 import com.fnsv.bsa.sdk.common.SdkUtil;
+import com.fnsv.bsa.sdk.response.AuthCompleteResponse;
 import com.fnsv.bsa.sdk.response.AuthResultResponse;
 import com.fnsv.bsa.sdk.response.ErrorResult;
 import com.fnsv.bsa.sdk.response.OtpCancelResponse;
@@ -42,6 +44,7 @@ import java.util.HashMap;
 import java.util.concurrent.Executor;
 
 
+@SuppressWarnings("ALL")
 public class OtpAuth extends AppCompatActivity {
 
     private static final String TAG = "OtpAuthClass";
@@ -112,7 +115,7 @@ public class OtpAuth extends AppCompatActivity {
         HashMap<String, Object> inputData = SecureStorageUtil.retrieveDataFromKeystore(getApplicationContext(), "inputData");
         userKey = (String) inputData.get("userKey");
 
-        requestOtpCode();
+        checkAccessTokenAndRequestOtp();
 
         cancelButton.setOnClickListener(v -> cancelOtpCode());
         reGenerateButton.setOnClickListener(v -> requestOtpCode());
@@ -155,6 +158,18 @@ public class OtpAuth extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private void checkAccessTokenAndRequestOtp() {
+        String accessToken = SdkUtil.getAccessToken();
+
+        if (accessToken != null && !accessToken.isEmpty()) {
+            Log.d(TAG, "Access token is available, requesting OTP code");
+            requestOtpCode();
+        } else {
+            Log.d(TAG, "Access token not available, starting in-app authentication");
+            callInAppAuthenticator(userKey, this::requestOtpCode);
+        }
+    }
+
     private void requestOtpCode() {
         progressBar.setVisibility(View.VISIBLE);
         BsaSdk.getInstance().getSdkService().getAuthOtpCode(new SdkResponseCallback<>() {
@@ -169,7 +184,6 @@ public class OtpAuth extends AppCompatActivity {
                     otpTextView.setText(otpCode);
                     otpTextView.setVisibility(View.VISIBLE);
                     otpTextView.setTextColor(Color.BLACK);
-
                     // authenticateOtp();
                 }
             }
@@ -219,13 +233,14 @@ public class OtpAuth extends AppCompatActivity {
         progressDialog.show();
 
         progressBar.setVisibility(View.VISIBLE);
-        BsaSdk.getInstance().getSdkService().otpViewAuthenticator(userKey, true, this, new SdkAuthResponseCallback<>() {
+        BsaSdk.getInstance().getSdkService().normalAuthenticator(userKey, true, this, new SdkAuthResponseCallback<>() {
+
             @Override
-            public void onSuccess(AuthResultResponse result) {
-                Log.d(TAG, "otpViewAuthenticator | onSuccess: cancelOtp");
+            public void onSuccess(AuthCompleteResponse authCompleteResponse) {
+                Log.d(TAG, "normalAuthenticator | onSuccess");
                 progressBar.setVisibility(View.INVISIBLE);
                 progressDialog.dismiss();
-                runOnUiThread(() -> showAuthenticationResult(true, "Carry on [Web]" + result.rtMsg));
+                runOnUiThread(() -> showAuthenticationResult(true, "Carry on [Web]" + authCompleteResponse.rtMsg));
             }
 
             @Override
@@ -344,4 +359,105 @@ public class OtpAuth extends AppCompatActivity {
                 }
             }
     );
+
+    private void callInAppAuthenticator(String userKey, Runnable success) {
+
+        // Show a dialog while processing
+        AlertDialog progressDialog = new AlertDialog.Builder(this)
+                .setView(LayoutInflater.from(this).inflate(R.layout.dialog_progress, findViewById(android.R.id.content), false))
+                .setCancelable(false)
+                .setNegativeButton(R.string.cancel, (dialogInterface, i) -> {
+                    // cancelExistingAuth();
+                    dialogInterface.dismiss(); // Dismiss the dialog
+                })
+                .create();
+        progressDialog.show();
+
+
+        BsaSdk.getInstance().getSdkService().appAuthenticator(userKey, true, this, new SdkAuthResponseCallback<>() {
+            @Override
+            public void onSuccess(AuthResultResponse authResultResponse) {
+                Log.d(TAG, "In-app authentication successful: code: " + authResultResponse.getRtCode());
+                String accessToken = SdkUtil.getAccessToken();
+                Log.e(TAG, "[callInAppAuthenticator]___ Access Token is set, | Access token: " + accessToken);
+                progressDialog.dismiss(); // Dismiss the dialog when authentication fails
+                success.run();
+            }
+
+            @Override
+            public void onProcess(boolean b, String s) {
+                Log.d(TAG, "In-app authentication processing...: s: " + s);
+                Snackbar.make(findViewById(android.R.id.content), "In-app authentication processing...: s: " + s, Snackbar.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailed(ErrorResult errorResult) {
+                progressDialog.dismiss(); // Dismiss the dialog when authentication fails
+                Log.e(TAG, "In-app authentication failed: " + errorResult.getErrorMessage() + " | code: " + errorResult.getErrorCode());
+                runOnUiThread(() -> handleAuthError(errorResult.getErrorCode()));
+            }
+        });
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void handleAuthError(int errorCode) {
+        String title = "Authentication Error";
+        String description;
+        String solution;
+
+        switch (errorCode) {
+            case 2004:
+                description = "Channel does not exist";
+                solution = "Check the URL used for initialization. If it happens constantly, please inquire the person in charge.";
+                break;
+            case 2010:
+                description = "User authentication in-progress";
+                solution = "Cancel previous authentication and request for a new one.";
+                break;
+            case 2100:
+            case 2105:
+            case 2107:
+                description = "Token is expired or not found";
+                solution = "Retry to authenticate.";
+                break;
+            case 2101:
+            case 2102:
+            case 2103:
+                description = "Invalid token";
+                solution = "Cancel previous authentication and request for a new one.";
+                break;
+            case 2106:
+                description = "Unmatched signature token";
+                solution = "Retry to authenticate.";
+                break;
+            case 5010:
+                description = "Authentication failure";
+                solution = "Contact the person in charge to solve this matter.";
+                break;
+            case 5011:
+                description = "User authentication canceled";
+                solution = "Make the person in charge solve this matter.";
+                break;
+            case 5015:
+                description = "Failed to create channel";
+                solution = "It can occur when the parameters are not enough. If it happens constantly, please inquire the person in charge.";
+                break;
+            case 5017:
+                description = "Failed to send push notification";
+                solution = "Problems with FCM (Firebase Cloud Messaging) etc. Also check whether the updated token is the correct one.";
+                break;
+            case 5022:
+                description = "Verification failure";
+                solution = "Node verification failed. If it happens constantly, please inquire the person in charge.";
+                break;
+            case 5000:
+                description = "Socket Time Exception - Read timed out";
+                solution = "Retry to authenticate.";
+                break;
+            default:
+                description = "Unknown error";
+                solution = "Please contact the person in charge.";
+                break;
+        }
+    }
 }

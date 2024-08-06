@@ -155,16 +155,17 @@ public class DeviceReRegistration extends AppCompatActivity {
                         authStatusTextView.setText(R.string.auth_success_text);
                     }, DELAY_DURATION);
 
-                    String accessToken = SdkUtil.getAccessToken();
 
-                    if (accessToken != null && !accessToken.isEmpty()) {
-                        SecureStorageUtil.saveAccessTokenToKeystore(DeviceReRegistration.this, accessToken);
-                        Log.d(TAG, "Access token retrieved and saved successfully: " + accessToken);
+                    //String secretKey = result.data.secretKey;
+
+                    if (result.data.secretKey != null && !result.data.secretKey.isEmpty()) {
+                        SecureStorageUtil.saveSecretKeyToKeystore(DeviceReRegistration.this, result.data.secretKey);
+                        Log.e(TAG, "Secret key retrieved and not saved successfully: " + result.data.secretKey);
+                    } else {
+                        runOnUiThread(() -> Toast.makeText(DeviceReRegistration.this, "Device not registered to the Account!!!", Toast.LENGTH_LONG).show());
+                        finish();
                     }
-                    Log.e(TAG, "Access token not retrieved and not saved successfully: " + accessToken);
 
-                    SecureStorageUtil.saveSecretKeyToKeystore(DeviceReRegistration.this, result.data.secretKey);
-                    Log.e(TAG, "Secret key retrieved and not saved successfully: " + result.data.secretKey);
 
                     runOnUiThread(() -> Toast.makeText(DeviceReRegistration.this, "Device re-registration successful", Toast.LENGTH_LONG).show());
                     SecureStorageUtil.saveDataToKeystore(DeviceReRegistration.this, "inputData", inputData);
