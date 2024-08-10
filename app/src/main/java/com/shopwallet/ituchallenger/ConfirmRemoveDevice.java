@@ -19,6 +19,7 @@ import com.fnsv.bsa.sdk.response.ErrorResult;
 import com.fnsv.bsa.sdk.response.UnRegisterDeviceResponse;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.auth.FirebaseAuth;
 import com.shopwallet.ituchallenger.util.SecureStorageUtil;
 import com.shopwallet.ituchallenger.util.SessionManager;
 
@@ -36,11 +37,11 @@ public class ConfirmRemoveDevice extends AppCompatActivity {
 
         storedInputData = SecureStorageUtil.retrieveDataFromKeystore(this, "inputData");
 
-        // set the Confirm button functionality
+        // Set the Confirm button functionality
         Button confirmButton = findViewById(R.id.confirmButton);
 
         confirmButton.setOnClickListener(view -> {
-            // show the de-register device dialog
+            // Show the de-register device dialog
             showRemoveDeviceDialog();
         });
     }
@@ -56,7 +57,6 @@ public class ConfirmRemoveDevice extends AppCompatActivity {
         assert buttonYes != null;
         buttonYes.setOnClickListener(v -> {
             // Handle Yes button click
-            // Add your deregister logic here
             unregisterDevice();
             dialog.dismiss();
         });
@@ -84,29 +84,13 @@ public class ConfirmRemoveDevice extends AppCompatActivity {
                     @Override
                     public void onSuccess(UnRegisterDeviceResponse response) {
                         Log.d(TAG, "Device unregistered successfully: " + response);
-                        runOnUiThread(() -> {
-                            // Display SnackBar
-                            Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Device removed", Snackbar.LENGTH_LONG);
-                            snackbar.setAnchorView(findViewById(R.id.dashboardBottomNavigation)); // Adjust if you have a BottomNavigationView
-                            snackbar.show();
-
-                            // Delay the navigation to allow Snackbar to be displayed
-                            new Handler().postDelayed(() -> {
-                                Intent intent = new Intent(ConfirmRemoveDevice.this, SignIn.class);
-                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                startActivity(intent);
-                                // Log out from the session
-                                SessionManager.getInstance(getApplicationContext()).logout();
-                                finish(); // Finish the current activity
-                            }, Snackbar.LENGTH_LONG + 2000); // Delay in milliseconds (Snackbar.LENGTH_SHORT is 2000ms by default, adding a bit more for visibility)
-                        });
+                        logOutFirebaseAndNavigateToSignIn();
                     }
 
                     @Override
                     public void onFailed(ErrorResult errorResult) {
                         if (errorResult.getErrorCode() == 2105) {
                             callInAppAuthenticator(userKey);
-
                         } else {
                             Log.e(TAG, "Failed to unregister device: " + errorResult.getErrorMessage());
                             runOnUiThread(() -> Toast.makeText(ConfirmRemoveDevice.this, "Failed to unregister device: " + errorResult.getErrorMessage(), Toast.LENGTH_LONG).show());
@@ -138,12 +122,32 @@ public class ConfirmRemoveDevice extends AppCompatActivity {
         }
     }
 
+    private void logOutFirebaseAndNavigateToSignIn() {
+        FirebaseAuth.getInstance().signOut();
+
+        // Display SnackBar
+        runOnUiThread(() -> {
+            Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Device removed", Snackbar.LENGTH_LONG);
+            snackbar.setAnchorView(findViewById(R.id.dashboardBottomNavigation)); // Adjust if you have a BottomNavigationView
+            snackbar.show();
+
+            // Delay the navigation to allow Snackbar to be displayed
+            new Handler().postDelayed(() -> {
+                Intent intent = new Intent(ConfirmRemoveDevice.this, SignIn.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                // Log out from the session
+                SessionManager.getInstance(getApplicationContext()).logout();
+                finish(); // Finish the current activity
+            }, Snackbar.LENGTH_LONG + 2000); // Delay in milliseconds
+        });
+    }
+
     private void callInAppAuthenticator(String userKey) {
         BsaSdk.getInstance().getSdkService().appAuthenticator(userKey, true, this, new SdkAuthResponseCallback<>() {
             @Override
             public void onSuccess(AuthResultResponse authResultResponse) {
                 Log.d(TAG, "In-app authentication successful: code: " + authResultResponse.getRtCode());
-                // onSuccess.run();
                 Log.d(TAG, "AccessToken: " + SdkUtil.getAccessToken());
                 unregisterDevice();
             }

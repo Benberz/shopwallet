@@ -12,9 +12,10 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.fnsv.bsa.sdk.BsaSdk;
 import com.fnsv.bsa.sdk.callback.SdkResponseCallback;
-import com.fnsv.bsa.sdk.common.SdkUtil;
 import com.fnsv.bsa.sdk.response.ErrorResult;
 import com.fnsv.bsa.sdk.response.ReRegisterDeviceResponse;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -23,6 +24,7 @@ import com.shopwallet.ituchallenger.util.SessionManager;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import pl.droidsonroids.gif.GifImageView;
 
@@ -39,14 +41,39 @@ public class DeviceReRegistration extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_re_registration);
 
+        // Retrieve input data from Secure Storage
         HashMap<String, Object> inputData = SecureStorageUtil.retrieveDataFromKeystore(DeviceReRegistration.this, "inputData");
 
         // Set the UI element
         authStatusImageView = findViewById(R.id.inAppAuthenticatingAnimatedImageView);
         authStatusTextView = findViewById(R.id.authenticatingStatusTextView);
 
-        // Call the method to start re-registering the device
-        reRegisterDevice(inputData);
+        // Ensure anonymous login before proceeding with the flow
+        ensureAnonymousLogin(inputData);
+    }
+
+    private void ensureAnonymousLogin(HashMap<String, Object> inputData) {
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseUser currentUser = auth.getCurrentUser();
+
+        if (currentUser == null) {
+            // No user is currently signed in, sign in anonymously
+            auth.signInAnonymously().addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    // Sign-in successful, proceed with querying holderRefId
+                    Log.d(TAG, "Anonymous sign-in successful.");
+                    reRegisterDevice(inputData);
+                } else {
+                    // Sign-in failed, handle the error
+                    Log.e(TAG, "Anonymous sign-in failed.", task.getException());
+                    handleSignInError(Objects.requireNonNull(task.getException()));
+                }
+            });
+        } else {
+            // User is already signed in, proceed with querying holderRefId
+            Log.d(TAG, "User is already signed in.");
+            reRegisterDevice(inputData);
+        }
     }
 
     private void reRegisterDevice(HashMap<String, Object> inputData) {
@@ -155,17 +182,13 @@ public class DeviceReRegistration extends AppCompatActivity {
                         authStatusTextView.setText(R.string.auth_success_text);
                     }, DELAY_DURATION);
 
-
-                    //String secretKey = result.data.secretKey;
-
                     if (result.data.secretKey != null && !result.data.secretKey.isEmpty()) {
                         SecureStorageUtil.saveSecretKeyToKeystore(DeviceReRegistration.this, result.data.secretKey);
-                        Log.e(TAG, "Secret key retrieved and not saved successfully: " + result.data.secretKey);
+                        Log.e(TAG, "Secret key retrieved and saved successfully: " + result.data.secretKey);
                     } else {
                         runOnUiThread(() -> Toast.makeText(DeviceReRegistration.this, "Device not registered to the Account!!!", Toast.LENGTH_LONG).show());
                         finish();
                     }
-
 
                     runOnUiThread(() -> Toast.makeText(DeviceReRegistration.this, "Device re-registration successful", Toast.LENGTH_LONG).show());
                     SecureStorageUtil.saveDataToKeystore(DeviceReRegistration.this, "inputData", inputData);
@@ -213,18 +236,15 @@ public class DeviceReRegistration extends AppCompatActivity {
                     startActivity(signInIntent);
                     finish();
                 })
+                .create()
                 .show());
     }
 
+    private void handleSignInError(Exception e) {
+        showErrorAndNavigateBack("Anonymous sign-in failed: " + e.getMessage());
+    }
+
     private void handleFirestoreConnectionIssue(Exception e) {
-        if (e.getMessage() != null && e.getMessage().contains("Could not reach Cloud Firestore backend")) {
-            runOnUiThread(() -> new AlertDialog.Builder(this)
-                    .setTitle("Connection Issue")
-                    .setMessage("Could not reach Cloud Firestore backend. Please check your internet connection. The app will operate in offline mode until a connection is restored.")
-                    .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
-                    .show());
-        } else {
-            showErrorAndNavigateBack(e.getMessage());
-        }
+        showErrorAndNavigateBack("Connection issue: " + e.getMessage());
     }
 }

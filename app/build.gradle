@@ -123,4 +123,5 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     implementation 'com.google.firebase:firebase-messaging:24.0.0'
     implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-auth:23.0.0'
 }
