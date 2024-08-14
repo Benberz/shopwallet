@@ -1,10 +1,10 @@
-# 🛡️ ShopWallet Mobile App: Passwordless Authentication at Its Best
+# 🛡️ ShopWallet Mobile App: Password-less Authentication at Its Best
 
-ShopWallet is more than just a mobile wallet; it's your gateway to secure, passwordless financial transactions. Powered by BSA (Biometric & Secure Authentication), ShopWallet eliminates the need for traditional passwords, offering you a seamless, secure, and user-friendly experience.
+ShopWallet is more than just a mobile wallet; it's your gateway to secure, password-less financial transactions. Powered by BSA (Biometric & Secure Authentication), ShopWallet eliminates the need for traditional passwords, offering you a seamless, secure, and user-friendly experience.
 
 ## 🎯 Objective
 
-To redefine mobile wallet security by introducing a robust, passwordless authentication system that prioritizes user convenience without compromising on security.
+To redefine mobile wallet security by introducing a robust, password-less authentication system that prioritizes user convenience without compromising on security.
 
 ## 💡 Concept
 
@@ -18,7 +18,7 @@ Forget passwords. With ShopWallet, your identity is your key. Using BSA, we've i
 
 ## 🚀 Key Features
 
-- 🔐 **Passwordless Login:** BSA Authentication ensures secure, frictionless access to your account.
+- 🔐 **Password-less Login:** BSA Authentication ensures secure, frictionless access to your account.
 - 💰 **Wallet Management:** Easily reload your wallet, check your balance, and view transaction history.
 - 💸 **Instant Transfers:** Send and receive money with a tap, protected by state-of-the-art security.
 - 📲 **Mobile Reload:** Quickly top up your mobile phone from anywhere, anytime.
