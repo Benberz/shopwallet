@@ -15,6 +15,10 @@ import androidx.core.content.ContextCompat;
 
 import com.fnsv.bsa.sdk.BsaSdk;
 
+/**
+ * Main activity of the application that handles initialization and user navigation.
+ * Manages permission requests, SDK initialization, and activity transitions.
+ */
 public class MainActivity extends AppCompatActivity {
 
     private static final String CLIENT_KEY = BuildConfig.CLIENT_KEY;
@@ -27,13 +31,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Check and request permissions
+        // Check and request necessary permissions
         if (!checkAndRequestPermissions()) {
             // Permissions not granted, handle as needed (e.g., show rationale or exit app)
-             showPermissionsRationale();
+            showPermissionsRationale();
             Toast.makeText(this, "[NOT] All necessary permissions granted", Toast.LENGTH_LONG).show();
         } else {
-            // Permissions granted, proceed with initialization
+            // Permissions granted, proceed with SDK initialization
             Toast.makeText(this, "All necessary permissions granted", Toast.LENGTH_SHORT).show();
             initializeSdk();
         }
@@ -50,11 +54,16 @@ public class MainActivity extends AppCompatActivity {
         Button signInButton = findViewById(R.id.signInButton);
         signInButton.setOnClickListener(view -> {
             // Start the Sign In activity
-            Intent signInActivity = new Intent(MainActivity.this, SignIn.class);
-            startActivity(signInActivity);
+            Intent signInIntent = new Intent(MainActivity.this, SignIn.class);
+            startActivity(signInIntent);
         });
     }
 
+    /**
+     * Checks if necessary permissions are granted and requests them if not.
+     *
+     * @return true if all permissions are granted, false otherwise.
+     */
     private boolean checkAndRequestPermissions() {
         String[] permissions = new String[0];
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -97,6 +106,9 @@ public class MainActivity extends AppCompatActivity {
         return allPermissionsGranted;
     }
 
+    /**
+     * Displays a dialog to explain the need for permissions and provides options to grant or exit.
+     */
     private void showPermissionsRationale() {
         new AlertDialog.Builder(this)
                 .setTitle("Permissions Required")
@@ -107,6 +119,9 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    /**
+     * Initializes the BsaSdk with the provided client key and API server URL.
+     */
     private void initializeSdk() {
         BsaSdk.getInstance().init(
                 getApplicationContext(),
@@ -116,6 +131,13 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "BsaSdk initialized successfully", Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * Handles the result of permission requests.
+     *
+     * @param requestCode The request code passed in requestPermissions().
+     * @param permissions The requested permissions.
+     * @param grantResults The grant results for the corresponding permissions.
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -136,11 +158,12 @@ public class MainActivity extends AppCompatActivity {
 
             if (allPermissionsGranted || writeExternalStorageGranted) {
                 Toast.makeText(this, "All necessary permissions granted", Toast.LENGTH_SHORT).show();
-                // Permissions granted, proceed with initialization
+                // Permissions granted, proceed with SDK initialization
                 initializeSdk();
             } else {
                 Toast.makeText(this, "Necessary permissions denied. The app may not work properly.", Toast.LENGTH_SHORT).show();
                 Toast.makeText(this, "WRITE_EXTERNAL_STORAGE permission denied. Some features may not work.", Toast.LENGTH_SHORT).show();
+                // Optionally show rationale or exit the app
                 // showPermissionsRationale();
             }
         }

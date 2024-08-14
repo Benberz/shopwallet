@@ -28,6 +28,11 @@ import java.util.Objects;
 
 import pl.droidsonroids.gif.GifImageView;
 
+/**
+ * This activity handles the device re-registration process.
+ * It ensures that the user is logged in anonymously before querying the necessary Firestore documents,
+ * and then attempts to re-register the device with the user's account.
+ */
 public class DeviceReRegistration extends AppCompatActivity {
 
     private static final String TAG = "DeviceReRegistrationClass";
@@ -36,6 +41,12 @@ public class DeviceReRegistration extends AppCompatActivity {
     GifImageView authStatusImageView;
     TextView authStatusTextView;
 
+    /**
+     * Called when the activity is first created.
+     * Initializes the UI components and ensures anonymous login before proceeding.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after previously being shut down, this Bundle contains the most recent data supplied by onSaveInstanceState.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,6 +63,11 @@ public class DeviceReRegistration extends AppCompatActivity {
         ensureAnonymousLogin(inputData);
     }
 
+    /**
+     * Ensures that the user is signed in anonymously. If not, signs in anonymously.
+     *
+     * @param inputData The input data retrieved from Secure Storage.
+     */
     private void ensureAnonymousLogin(HashMap<String, Object> inputData) {
         FirebaseAuth auth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = auth.getCurrentUser();
@@ -76,6 +92,11 @@ public class DeviceReRegistration extends AppCompatActivity {
         }
     }
 
+    /**
+     * Re-registers the device with the server. Queries Firestore for holderRefId, balanceRefId, and linkedBankRef if necessary.
+     *
+     * @param inputData The input data retrieved from Secure Storage.
+     */
     private void reRegisterDevice(HashMap<String, Object> inputData) {
         String email = (String) inputData.get("email");
 
@@ -86,6 +107,12 @@ public class DeviceReRegistration extends AppCompatActivity {
         }
     }
 
+    /**
+     * Queries Firestore for the holderRefId using the user's email.
+     *
+     * @param email     The user's email address.
+     * @param inputData The input data retrieved from Secure Storage.
+     */
     private void queryHolderRefId(String email, HashMap<String, Object> inputData) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("itu_challenge_wallet_holders")
@@ -107,6 +134,12 @@ public class DeviceReRegistration extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Queries Firestore for the balanceRefId using the holderRefId.
+     *
+     * @param holderRefId The holderRefId obtained from the previous query.
+     * @param inputData   The input data retrieved from Secure Storage.
+     */
     private void queryBalanceRefId(String holderRefId, HashMap<String, Object> inputData) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("itu_challenge_wallet_balances")
@@ -131,6 +164,12 @@ public class DeviceReRegistration extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Queries Firestore for the linkedBankRef using the holderRefId.
+     *
+     * @param holderRefId The holderRefId obtained from the previous query.
+     * @param inputData   The input data retrieved from Secure Storage.
+     */
     private void queryLinkedBankRef(String holderRefId, HashMap<String, Object> inputData) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("itu_challenge_linked_banks")
@@ -156,6 +195,11 @@ public class DeviceReRegistration extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Continues the device re-registration process after querying Firestore.
+     *
+     * @param inputData The input data retrieved from Secure Storage.
+     */
     private void continueReRegistration(HashMap<String, Object> inputData) {
         Map<String, Object> params = new HashMap<>();
         params.put("userKey", inputData.get("userKey"));
@@ -217,6 +261,11 @@ public class DeviceReRegistration extends AppCompatActivity {
         finish();
     }
 
+    /**
+     * Shows an error message and navigates back to the previous activity.
+     *
+     * @param errorMessage The error message to be displayed.
+     */
     private void showErrorAndNavigateBack(String errorMessage) {
         runOnUiThread(() -> {
             Toast.makeText(this, "Error: " + errorMessage, Toast.LENGTH_LONG).show();
@@ -226,6 +275,10 @@ public class DeviceReRegistration extends AppCompatActivity {
         });
     }
 
+    /**
+     * Displays a dialog informing the user that the device is not registered to the account.
+     * The user is prompted to sign in with the registered device.
+     */
     private void showNotRegisteredDialog() {
         runOnUiThread(() -> new AlertDialog.Builder(this)
                 .setTitle("Device Not Registered")
@@ -240,10 +293,20 @@ public class DeviceReRegistration extends AppCompatActivity {
                 .show());
     }
 
+    /**
+     * Handles the sign-in error and prompts the user to try again later.
+     *
+     * @param e The exception thrown during the sign-in operation.
+     */
     private void handleSignInError(Exception e) {
         showErrorAndNavigateBack("Anonymous sign-in failed: " + e.getMessage());
     }
 
+    /**
+     * Handles Firestore connection issues and prompts the user to try again later.
+     *
+     * @param e The exception thrown during the Firestore operation.
+     */
     private void handleFirestoreConnectionIssue(Exception e) {
         showErrorAndNavigateBack("Connection issue: " + e.getMessage());
     }

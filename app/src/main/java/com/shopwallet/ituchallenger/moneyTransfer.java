@@ -36,6 +36,27 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * This activity handles the process of transferring money between wallet accounts.
+ * It allows users to input recipient wallet IDs, transfer amounts, and initiate
+ * the money transfer process.
+ *
+ * <p>The activity includes functionality for:
+ * <ul>
+ *     <li>Validating the wallet ID and recipient information.</li>
+ *     <li>Checking the sender's wallet balance before initiating the transfer.</li>
+ *     <li>Updating both the sender's and receiver's wallet balances in Firestore.</li>
+ *     <li>Recording the transaction details in Firestore.</li>
+ *     <li>Displaying dialogs to indicate the success or failure of the transaction.</li>
+ * </ul>
+ * </p>
+ *
+ * <p>It also integrates with other components such as the scan-to-pay functionality,
+ * allowing users to scan a QR code to pre-fill the recipient's wallet ID and transfer amount.</p>
+ *
+ * <p>The UI components include input fields for wallet ID, recipient name, and transfer amount,
+ * along with buttons to submit the transfer and scan for payments.</p>
+ */
 public class moneyTransfer extends AppCompatActivity {
 
     private static final String TAG = "moneyTransferClass";
@@ -49,6 +70,12 @@ public class moneyTransfer extends AppCompatActivity {
     private String amountStr;
     private String holderRefId;
 
+    /**
+     * Called when the activity is first created. Initializes the UI components and sets up
+     * the toolbar, data retrieval, and button listeners.
+     *
+     * @param savedInstanceState A bundle containing the activity's previously saved state.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,6 +90,7 @@ public class moneyTransfer extends AppCompatActivity {
             getSupportActionBar().setTitle(R.string.money_transfer);
         }
 
+        // Retrieve input data from the secure storage
         HashMap<String, Object> inputData = SecureStorageUtil.retrieveDataFromKeystore(this, "inputData");
 
         walletId = findViewById(R.id.phoneNumberReloadInput);
@@ -86,7 +114,7 @@ public class moneyTransfer extends AppCompatActivity {
 
         Log.d(TAG, "walletBalanceDocRef: " + walletBalanceDocRef);
 
-        // Add TextWatcher to walletId EditText
+        // Add TextWatcher to walletId EditText to validate wallet ID
         walletId.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int start, int count, int after) {
@@ -113,14 +141,16 @@ public class moneyTransfer extends AppCompatActivity {
             }
         });
 
+        // Set up the submit button click listener
         submitTransfer.setOnClickListener(view -> {
             if (validateInputs()) {
                 checkSenderBalanceAndTransfer(walletIdStr, Double.parseDouble(amountStr));
             }
         });
 
+        // Set up the scan to pay button click listener
         scanToPayButton.setOnClickListener(v -> {
-            // implement the BottomDialogSheet to load the ScanToPayWithQr Activity here
+            // Implement the BottomDialogSheet to load the ScanToPayWithQr Activity
             Intent intent = new Intent(moneyTransfer.this, ScanToPayWithQR.class);
             startActivity(intent);
         });
@@ -142,6 +172,11 @@ public class moneyTransfer extends AppCompatActivity {
         }
     }
 
+    /**
+     * Validates user inputs for wallet ID and transfer amount.
+     *
+     * @return true if inputs are valid, otherwise false.
+     */
     private boolean validateInputs() {
         walletIdStr = walletId.getText().toString().trim();
         amountStr = transferAmount.getText().toString().trim();
@@ -170,6 +205,9 @@ public class moneyTransfer extends AppCompatActivity {
         return true;
     }
 
+    /**
+     * Validates the wallet ID and retrieves the recipient's name if valid.
+     */
     private void validateWalletIdAndProceed() {
         String walletIdStr = walletId.getText().toString().trim();
 
@@ -193,6 +231,12 @@ public class moneyTransfer extends AppCompatActivity {
         });
     }
 
+    /**
+     * Sets an icon drawable for the provided EditText.
+     *
+     * @param editText The EditText to set the icon for.
+     * @param iconResId The resource ID of the drawable to set.
+     */
     private void setIcon(EditText editText, int iconResId) {
         Drawable icon = iconResId != 0 ? ContextCompat.getDrawable(this, iconResId) : null;
         if (iconResId == 0) {
@@ -202,6 +246,12 @@ public class moneyTransfer extends AppCompatActivity {
         }
     }
 
+    /**
+     * Checks the sender's balance and performs the transfer if sufficient balance is available.
+     *
+     * @param receiverWalletId The wallet ID of the receiver.
+     * @param amount The amount to transfer.
+     */
     public void checkSenderBalanceAndTransfer(String receiverWalletId, double amount) {
         db.collection("itu_challenge_wallet_balances")
                 .document(walletBalanceDocRef)
@@ -245,6 +295,11 @@ public class moneyTransfer extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Shows an error dialog with the provided message.
+     *
+     * @param message The error message to display in the dialog.
+     */
     private void showErrorDialog(String message) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Error");
@@ -253,6 +308,12 @@ public class moneyTransfer extends AppCompatActivity {
         builder.show();
     }
 
+    /**
+     * Retrieves the DocumentReference for the receiver's wallet and calls the provided callback.
+     *
+     * @param receiverWalletId The wallet ID of the receiver.
+     * @param callback The callback to invoke with the receiver DocumentReference.
+     */
     private void getReceiverDocumentReference(String receiverWalletId, ReceiverReferenceCallback callback) {
         CollectionReference walletBalancesRef = db.collection("itu_challenge_wallet_balances");
         Query query = walletBalancesRef.whereEqualTo("walletId", receiverWalletId);
@@ -267,6 +328,13 @@ public class moneyTransfer extends AppCompatActivity {
         });
     }
 
+    /**
+     * Updates the sender's and receiver's balances in a transaction.
+     *
+     * @param receiverRef The DocumentReference for the receiver's wallet.
+     * @param amount The amount to transfer.
+     * @param senderCurrentBalance The current balance of the sender's wallet.
+     */
     private void updateBalances(DocumentReference receiverRef, double amount, double senderCurrentBalance) {
         transferAmountProgressBar.setVisibility(View.VISIBLE);
         AtomicReference<String> receiverUserRefId = new AtomicReference<>("");
@@ -301,8 +369,13 @@ public class moneyTransfer extends AppCompatActivity {
         });
     }
 
+    /**
+     * Records the transaction details in the Firestore database.
+     *
+     * @param amount The amount transferred.
+     * @param receiverUserRefId The user reference ID of the receiver.
+     */
     private void recordTransaction(double amount, String receiverUserRefId) {
-
         Map<String, Object> transaction = new HashMap<>();
         transaction.put("title", "Money Transfer");
         transaction.put("amount", amount);
@@ -317,10 +390,21 @@ public class moneyTransfer extends AppCompatActivity {
                 .addOnFailureListener(e -> Log.e(TAG, "Failed to record transaction", e));
     }
 
+    /**
+     * Gets the current date and time in "yyyy-MM-dd HH:mm:ss" format.
+     *
+     * @return The current date and time as a string.
+     */
     private String getCurrentDatetime() {
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
     }
 
+    /**
+     * Shows a dialog indicating the transaction status.
+     *
+     * @param title The title of the dialog.
+     * @param message The message to display in the dialog.
+     */
     private void showTransactionDialog(String title, String message) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(title);
@@ -335,10 +419,19 @@ public class moneyTransfer extends AppCompatActivity {
         builder.show();
     }
 
+    /**
+     * Interface for receiving the callback with the receiver's DocumentReference.
+     */
     private interface ReceiverReferenceCallback {
         void onCallback(DocumentReference receiverRef, Exception e);
     }
 
+    /**
+     * Handles the selection of options from the toolbar menu.
+     *
+     * @param item The menu item that was selected.
+     * @return true if the item was handled, otherwise false.
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {

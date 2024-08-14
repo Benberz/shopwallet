@@ -47,6 +47,12 @@ public class mobileReload extends AppCompatActivity {
     private String amountStr;
     private String holderRefId;
 
+    /**
+     * Called when the activity is first created. Sets up the UI components, initializes
+     * Firestore, and configures event listeners for user inputs and button actions.
+     *
+     * @param savedInstanceState A Bundle containing the activity's previously saved state, if any.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,12 +62,13 @@ public class mobileReload extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.mobileReloadToolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
+            // Enable the Up button and set the title for the toolbar
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
             getSupportActionBar().setTitle(R.string.mobile_reload);
         }
 
-        // Retrieve inputData from SecureStorageUtil
+        // Retrieve input data from SecureStorageUtil
         HashMap<String, Object> inputData = SecureStorageUtil.retrieveDataFromKeystore(this, "inputData");
         walletBalanceDocRef = (String) inputData.get("balanceRefId");
         holderRefId = (String) inputData.get("holderRefId");
@@ -69,24 +76,27 @@ public class mobileReload extends AppCompatActivity {
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
 
-        // Get the inputs
+        // Initialize UI components
         phoneNumber = findViewById(R.id.phoneNumberReloadInput);
         receiverName = findViewById(R.id.receiverNameInput);
         creditAmount = findViewById(R.id.creditAmount);
         mobileReloadProgressBar = findViewById(R.id.mobileReloadProgressBar);
         Button mobileReloadSubmitButton = findViewById(R.id.submitMobileReloadButton);
 
+        // Hide the progress bar initially
         mobileReloadProgressBar.setVisibility(View.INVISIBLE);
 
+        // Initialize phone number string
         phoneNumberStr = phoneNumber.getText().toString().trim();
 
-        // Add TextWatcher to phoneNumber EditText
+        // Add a TextWatcher to monitor changes in the phone number input
         phoneNumber.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
+                // Clear receiverName and reset icons if phone number length is less than or equal to 11
                 if (charSequence.length() <= 11) {
                     setIcon(receiverName, 0);
                     receiverName.setText("");
@@ -97,6 +107,7 @@ public class mobileReload extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable editable) {
+                // Validate phone number and fetch receiver name if the length is exactly 11
                 if (editable.length() == 11) {
                     validatePhoneNumberAndFetchName();
                     Log.d(TAG, "validatePhoneNumberAndFetchName(); (afterTextChanged)");
@@ -108,25 +119,27 @@ public class mobileReload extends AppCompatActivity {
             }
         });
 
-        // Add TextWatcher to creditAmount EditText
+        // Add a TextWatcher to monitor changes in the credit amount input
         creditAmount.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
+                // Reset icon when credit amount is changed
                 setIcon(creditAmount, 0);
             }
 
             @Override
             public void afterTextChanged(Editable editable) {
+                // Validate inputs and check user balance if valid
                 if (validateInputs()) {
                     checkUserBalance(Double.parseDouble(amountStr));
                 }
             }
         });
 
-        // Set OnClickListener for the submit button
+        // Set OnClickListener for the submit button to initiate mobile reload
         mobileReloadSubmitButton.setOnClickListener(view -> {
             if (validateInputs()) {
                 performMobileReload(phoneNumberStr, Double.parseDouble(amountStr));
@@ -134,15 +147,22 @@ public class mobileReload extends AppCompatActivity {
         });
     }
 
+    /**
+     * Validates user inputs for phone number and credit amount.
+     *
+     * @return true if inputs are valid, false otherwise.
+     */
     private boolean validateInputs() {
         phoneNumberStr = phoneNumber.getText().toString().trim();
         amountStr = creditAmount.getText().toString().trim();
 
+        // Validate phone number
         if (phoneNumberStr.isEmpty()) {
             phoneNumber.setError("Phone number is required");
             return false;
         }
 
+        // Validate credit amount
         if (amountStr.isEmpty()) {
             creditAmount.setError("Credit amount is required");
             return false;
@@ -162,6 +182,9 @@ public class mobileReload extends AppCompatActivity {
         return true;
     }
 
+    /**
+     * Validates the phone number and fetches the corresponding name from Firestore.
+     */
     private void validatePhoneNumberAndFetchName() {
         CollectionReference walletHoldersRef = db.collection("itu_challenge_wallet_holders");
         Query query = walletHoldersRef.whereEqualTo("phoneNum", phoneNumberStr);
@@ -196,6 +219,12 @@ public class mobileReload extends AppCompatActivity {
         });
     }
 
+    /**
+     * Sets an icon on the EditText based on the provided resource ID.
+     *
+     * @param editText The EditText to set the icon on.
+     * @param iconResId The resource ID of the icon to set; use 0 to clear the icon.
+     */
     private void setIcon(EditText editText, int iconResId) {
         Drawable icon = iconResId != 0 ? ContextCompat.getDrawable(this, iconResId) : null;
         if (iconResId == 0) {
@@ -205,6 +234,11 @@ public class mobileReload extends AppCompatActivity {
         }
     }
 
+    /**
+     * Checks the user's balance to ensure it is sufficient for the specified amount.
+     *
+     * @param amount The amount to check against the user's balance.
+     */
     private void checkUserBalance(double amount) {
         db.collection("itu_challenge_wallet_balances")
                 .document(walletBalanceDocRef)
@@ -226,6 +260,12 @@ public class mobileReload extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Performs the mobile reload transaction, including updating the balance and simulating the reload API call.
+     *
+     * @param phoneNumber The phone number to reload.
+     * @param amount The amount to reload.
+     */
     private void performMobileReload(String phoneNumber, double amount) {
         mobileReloadProgressBar.setVisibility(View.VISIBLE);
 
@@ -261,6 +301,11 @@ public class mobileReload extends AppCompatActivity {
         });
     }
 
+    /**
+     * Records the mobile reload transaction in the Firestore database.
+     *
+     * @param amount The amount of the transaction.
+     */
     private void recordTransaction(double amount) {
         Map<String, Object> transaction = new HashMap<>();
         transaction.put("title", "Mobile Reload");
@@ -274,10 +319,22 @@ public class mobileReload extends AppCompatActivity {
                 .addOnFailureListener(e -> Log.e(TAG, "Failed to record transaction", e));
     }
 
+    /**
+     * Gets the current date and time in the format "yyyy-MM-dd HH:mm:ss".
+     *
+     * @return The current date and time as a String.
+     */
     private String getCurrentDatetime() {
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
     }
 
+    /**
+     * Mock API call to simulate the mobile reload process.
+     *
+     * @param phoneNumber The phone number to reload.
+     * @param amount The amount to reload.
+     * @return true if the mock API call succeeds, false otherwise.
+     */
     private boolean mockMobileReloadAPI(String phoneNumber, double amount) {
         // Mock API call to telecom company
         // Return true for success, false for failure
@@ -285,6 +342,12 @@ public class mobileReload extends AppCompatActivity {
         return true; // Mock success
     }
 
+    /**
+     * Displays a dialog with the specified title and message.
+     *
+     * @param title The title of the dialog.
+     * @param message The message to display in the dialog.
+     */
     private void showTransactionDialog(String title, String message) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(title);

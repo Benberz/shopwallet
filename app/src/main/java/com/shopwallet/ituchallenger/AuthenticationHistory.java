@@ -27,10 +27,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * Activity that displays the authentication history for the user.
+ * This includes setting up the RecyclerView, loading authentication data,
+ * and handling user interactions such as navigating back to the Profile activity.
+ */
 public class AuthenticationHistory extends AppCompatActivity {
 
     private static final String TAG = "AuthenticationHistory";
 
+    // Views
     protected RecyclerView recyclerView;
     protected AuthHistoryAdapter adapter;
     protected List<AuthHistory> authHistoryList;
@@ -40,7 +46,7 @@ public class AuthenticationHistory extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_authentication_history);
 
-        // Set up the toolbar
+        // Set up the toolbar with back navigation support
         Toolbar toolbar = findViewById(R.id.authHistoryToolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
@@ -49,6 +55,7 @@ public class AuthenticationHistory extends AppCompatActivity {
             getSupportActionBar().setTitle(R.string.authentication_history_text);
         }
 
+        // Initialize RecyclerView and adapter
         recyclerView = findViewById(R.id.authHistoryRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
@@ -56,29 +63,35 @@ public class AuthenticationHistory extends AppCompatActivity {
         adapter = new AuthHistoryAdapter(this, authHistoryList);
         recyclerView.setAdapter(adapter);
 
+        // Load authentication history data
         loadAuthHistoryData();
     }
 
+    /**
+     * Loads authentication history data by authenticating the user first.
+     * Displays a progress dialog while processing the authentication request.
+     */
     private void loadAuthHistoryData() {
         HashMap<String, Object> inputData = SecureStorageUtil.retrieveDataFromKeystore(this, "inputData");
         String userKey = (String) inputData.get("userKey");
-        Log.d(TAG, " userKey: " + userKey);
+        Log.d(TAG, "userKey: " + userKey);
 
-        // Show a dialog while processing
+        // Show a progress dialog while authentication is in progress
         runOnUiThread(() -> {
-            @SuppressLint("InflateParams") AlertDialog progressDialog = new AlertDialog.Builder(this)
+            @SuppressLint("InflateParams")
+            AlertDialog progressDialog = new AlertDialog.Builder(this)
                     .setView(LayoutInflater.from(this).inflate(R.layout.dialog_progress, null))
                     .setCancelable(false)
                     .create();
             progressDialog.show();
 
-
+            // Perform authentication
             BsaSdk.getInstance().getSdkService().appAuthenticator(userKey, true, this, new SdkAuthResponseCallback<>() {
                 @Override
                 public void onSuccess(AuthResultResponse result) {
                     Log.d(TAG, "App authentication successful: " + result.rtMsg + " | " + result.getRtCode());
                     progressDialog.dismiss(); // Dismiss the dialog when authentication is successful
-                    getAuthHistoryData();
+                    getAuthHistoryData(); // Retrieve authentication history data
                 }
 
                 @Override
@@ -97,6 +110,9 @@ public class AuthenticationHistory extends AppCompatActivity {
         });
     }
 
+    /**
+     * Retrieves the authentication history data from the server and updates the RecyclerView.
+     */
     private void getAuthHistoryData() {
         BsaSdk.getInstance().getSdkService().getAuthHistory(1, 20, new SdkResponseCallback<>() {
             @SuppressLint("NotifyDataSetChanged")
@@ -123,8 +139,8 @@ public class AuthenticationHistory extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            // Handle back button click
-            startActivity(new Intent(this, Profile.class)); // to navigate back to Profile
+            // Handle the back button click event to navigate back to the Profile activity
+            startActivity(new Intent(this, Profile.class));
             return true;
         }
         return super.onOptionsItemSelected(item);

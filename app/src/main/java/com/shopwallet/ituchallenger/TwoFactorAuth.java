@@ -29,18 +29,23 @@ import com.shopwallet.ituchallenger.util.SecureStorageUtil;
 import java.util.HashMap;
 import java.util.concurrent.Executor;
 
+/**
+ * The TwoFactorAuth class handles the selection and registration of two-factor authentication methods
+ * (Biometric or PIN/Pattern) for the ShopWallet application. It integrates with the BsaSdk to register
+ * biometric data or authenticate using a device PIN/Pattern.
+ */
 @SuppressWarnings("ALL")
 public class TwoFactorAuth extends AppCompatActivity {
 
-    private static final String TAG = "TwoFactorAuthClass";
+    private static final String TAG = "TwoFactorAuthClass"; // Tag for logging
 
     private CardView selectBiometricCardView;
     private CardView selectPinPatternCardView;
     private Button nextTwoFAButton;
     private ProgressBar progressBar;
 
-    private boolean isBiometricSelected = false;
-    private HashMap<String, Object> inputData;
+    private boolean isBiometricSelected = false; // Flag to track selected authentication method
+    private HashMap<String, Object> inputData;   // Data passed between activities
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,47 +56,62 @@ public class TwoFactorAuth extends AppCompatActivity {
         Intent intent = getIntent();
         inputData = (HashMap<String, Object>) intent.getSerializableExtra("inputData");
 
+        // Initialize UI components
         selectBiometricCardView = findViewById(R.id.selectBiometricCardView);
         selectPinPatternCardView = findViewById(R.id.selectPinPatternCardView);
         nextTwoFAButton = findViewById(R.id.selectAuthTypeNextButton);
         progressBar = findViewById(R.id.twoFactorProgressBar);
-        progressBar.setVisibility(View.GONE);
+        progressBar.setVisibility(View.GONE); // Hide the progress bar initially
 
+        // Set up click listeners for the authentication options
         selectBiometricCardView.setOnClickListener(v -> {
             handleSelection(selectBiometricCardView, "Biometric");
-            isBiometricSelected = true;
-            setupBiometricPrompt();
+            isBiometricSelected = true; // Set flag to indicate biometric is selected
+            setupBiometricPrompt(); // Set up biometric prompt
         });
 
         selectPinPatternCardView.setOnClickListener(v -> {
             handleSelection(selectPinPatternCardView, "PIN/Pattern");
-            isBiometricSelected = false;
-            checkPinPatternSetup();
+            isBiometricSelected = false; // Set flag to indicate PIN/Pattern is selected
+            checkPinPatternSetup(); // Check if device PIN/Pattern is set up
         });
 
+        // Set up click listener for the Next button
         nextTwoFAButton.setOnClickListener(view -> {
-            progressBar.setVisibility(View.VISIBLE);
+            progressBar.setVisibility(View.VISIBLE); // Show progress bar
             if (isBiometricSelected) {
-                registerBiometric();
+                registerBiometric(); // Register biometric authentication
             } else {
-                registerPinPattern();
+                registerPinPattern(); // Register PIN/Pattern authentication
             }
         });
 
-        nextTwoFAButton.setEnabled(false);
+        nextTwoFAButton.setEnabled(false); // Disable Next button initially
     }
 
+    /**
+     * Handles the UI changes when a user selects an authentication method.
+     *
+     * @param selectedCardView The CardView that was selected.
+     * @param selectionType The type of authentication selected (Biometric or PIN/Pattern).
+     */
     private void handleSelection(CardView selectedCardView, String selectionType) {
-        resetSelections();
+        resetSelections(); // Reset other selections
         selectedCardView.setCardBackgroundColor(Color.LTGRAY); // Highlight the selected card
-        Toast.makeText(this, selectionType + " selected", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, selectionType + " selected", Toast.LENGTH_SHORT).show(); // Show selection toast
     }
 
+    /**
+     * Resets the background color of both authentication option CardViews.
+     */
     private void resetSelections() {
         selectBiometricCardView.setCardBackgroundColor(Color.WHITE);
         selectPinPatternCardView.setCardBackgroundColor(Color.WHITE);
     }
 
+    /**
+     * Registers the biometric authentication method using the BsaSdk.
+     */
     private void registerBiometric() {
         BsaSdk.getInstance().getSdkService().registerBiometric(this, new SdkResponseCallback<>() {
             @Override
@@ -102,7 +122,7 @@ public class TwoFactorAuth extends AppCompatActivity {
                     Toast.makeText(TwoFactorAuth.this, "Biometric registration successful", Toast.LENGTH_LONG).show();
                     inputData.put("authType", "3");
                     inputData.put("otpType", "email");
-                    saveInputDataAndNavigate();
+                    saveInputDataAndNavigate(); // Save input data and navigate to the next screen
                 });
             }
 
@@ -118,6 +138,9 @@ public class TwoFactorAuth extends AppCompatActivity {
         });
     }
 
+    /**
+     * Registers the PIN/Pattern authentication method using the BsaSdk.
+     */
     private void registerPinPattern() {
         BsaSdk.getInstance().getSdkService().authDeviceCredential(TwoFactorAuth.this, new SdkResponseCallback<>() {
             @Override
@@ -128,7 +151,7 @@ public class TwoFactorAuth extends AppCompatActivity {
                     Toast.makeText(TwoFactorAuth.this, "PIN/Pattern authentication successful", Toast.LENGTH_LONG).show();
                     inputData.put("authType", "4");
                     inputData.put("otpType", "email");
-                    saveInputDataAndNavigate();
+                    saveInputDataAndNavigate(); // Save input data and navigate to the next screen
                 });
             }
 
@@ -144,8 +167,11 @@ public class TwoFactorAuth extends AppCompatActivity {
         });
     }
 
+    /**
+     * Saves the input data securely and navigates to the appropriate next screen.
+     */
     private void saveInputDataAndNavigate() {
-        progressBar.setVisibility(View.GONE);
+        progressBar.setVisibility(View.GONE); // Hide progress bar
         Intent intent = getIntent();
         if ("signIn".equals(intent.getStringExtra("from"))) {
             // Retrieve inputData securely before navigating to Dashboard
@@ -154,18 +180,21 @@ public class TwoFactorAuth extends AppCompatActivity {
             Intent dashboardIntent = new Intent(TwoFactorAuth.this, DeviceReRegistration.class);
             dashboardIntent.putExtra("inputData", storedInputData);
             startActivity(dashboardIntent);
-            finish();
+            finish(); // Finish current activity
         } else {
             Intent agreementsIntent = new Intent(TwoFactorAuth.this, Agreements.class);
             agreementsIntent.putExtra("inputData", inputData);
             startActivity(agreementsIntent);
-            finish();
+            finish(); // Finish current activity
         }
     }
 
+    /**
+     * Sets up the BiometricPrompt for biometric authentication.
+     */
     @SuppressLint("SwitchIntDef")
     private void setupBiometricPrompt() {
-        Executor executor = ContextCompat.getMainExecutor(this);
+        Executor executor = ContextCompat.getMainExecutor(this); // Use main thread executor
         BiometricPrompt biometricPrompt = new BiometricPrompt(this, executor, new BiometricPrompt.AuthenticationCallback() {
             @Override
             public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
@@ -178,7 +207,7 @@ public class TwoFactorAuth extends AppCompatActivity {
             public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
                 super.onAuthenticationSucceeded(result);
                 Log.d(TAG, "Authentication succeeded!");
-                nextTwoFAButton.setEnabled(true); // Enable Next button
+                nextTwoFAButton.setEnabled(true); // Enable Next button on success
             }
 
             @Override
@@ -203,38 +232,31 @@ public class TwoFactorAuth extends AppCompatActivity {
                 break;
             case BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE:
                 Log.e(TAG, "No biometric features available on this device.");
-                Toast.makeText(this, "No biometric features available on this device.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Your device does not have biometric authentication", Toast.LENGTH_LONG).show();
                 break;
             case BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE:
                 Log.e(TAG, "Biometric features are currently unavailable.");
-                Toast.makeText(this, "Biometric features are currently unavailable.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Biometric authentication is currently unavailable", Toast.LENGTH_LONG).show();
                 break;
             case BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED:
-                Log.e(TAG, "The user hasn't associated any biometric credentials with their account.");
-                Toast.makeText(this, "No biometric credentials found.", Toast.LENGTH_SHORT).show();
-                Intent enrollIntent = null;
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                    enrollIntent = new Intent(Settings.ACTION_BIOMETRIC_ENROLL);
-                }
-                startActivity(enrollIntent);
-                break;
-            default:
-                Log.e(TAG, "Unknown error occurred.");
-                Toast.makeText(this, "An unknown error occurred.", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "User has not associated any biometric credentials with their account.");
+                Toast.makeText(this, "No biometric credentials enrolled", Toast.LENGTH_LONG).show();
                 break;
         }
     }
 
-    @SuppressLint("SwitchIntDef")
+    /**
+     * Checks if a device PIN, pattern, or password is set up.
+     */
     private void checkPinPatternSetup() {
         KeyguardManager keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-        if (keyguardManager.isDeviceSecure()) {
-            Log.d(TAG, "Device is secure with PIN/Pattern/Password.");
-            nextTwoFAButton.setEnabled(true); // Enable Next button
+        if (keyguardManager.isKeyguardSecure()) {
+            Toast.makeText(this, "Device PIN/Pattern/Password is set up", Toast.LENGTH_LONG).show();
+            nextTwoFAButton.setEnabled(true); // Enable Next button if secure
         } else {
-            Log.e(TAG, "No PIN/Pattern/Password set up.");
-            Toast.makeText(this, "No PIN/Pattern/Password set up.", Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(Settings.ACTION_SECURITY_SETTINGS));
+            Toast.makeText(this, "Please set up a PIN/Pattern/Password in device settings", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
+            startActivity(intent);
         }
     }
 }

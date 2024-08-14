@@ -28,6 +28,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Activity for handling wallet top-up operations.
+ * This activity allows users to top up their wallet by entering an amount,
+ * verifying the balance, and processing the top-up transaction.
+ * It also handles bank account linking and displays relevant dialogs.
+ */
 public class walletTopUp extends AppCompatActivity implements BankLinkFragment.BankLinkCallback {
 
     private static final String TAG = "walletTopUpClass";
@@ -35,8 +41,8 @@ public class walletTopUp extends AppCompatActivity implements BankLinkFragment.B
     private Button submitReloadButton;
     private HolderBankAccount holderBankAccount;
 
-    HashMap<String, Object> inputData;
-    String docRef;
+    private HashMap<String, Object> inputData;
+    private String docRef;
     private String walletBalanceDocRef;
     private String linkedBankDocRef;
 
@@ -60,17 +66,21 @@ public class walletTopUp extends AppCompatActivity implements BankLinkFragment.B
             getSupportActionBar().setTitle(R.string.wallet_topup);
         }
 
+        // Initialize views
         amountInput = findViewById(R.id.creditAmount);
         submitReloadButton = findViewById(R.id.submitMobileReloadButton);
         topUpProgressBar = findViewById(R.id.topUpProgressBar);
         topUpProcessingTextView = findViewById(R.id.topUpProcessingTextView);
 
+        // Initially hide progress bar and processing text
         topUpProgressBar.setVisibility(View.GONE);
         topUpProcessingTextView.setVisibility(View.GONE);
 
+        // Retrieve input data from secure storage
         inputData = SecureStorageUtil.retrieveDataFromKeystore(walletTopUp.this, "inputData");
         linkedBankDocRef = (String) inputData.get("linkedBankRef");
 
+        // Initialize Firestore instance and retrieve references
         db = FirebaseFirestore.getInstance();
         holderRefId = (String) inputData.get("holderRefId");
         walletBalanceDocRef = (String) inputData.get("balanceRefId");
@@ -80,31 +90,40 @@ public class walletTopUp extends AppCompatActivity implements BankLinkFragment.B
             Log.d(TAG, "Key: " + entry.getKey() + ", Value: " + entry.getValue() + ", Value Type: " + entry.getValue().getClass().getName());
         }
 
+        // Check if bank account is registered
         if (inputData.get("registeredBank") == null || Objects.requireNonNull(inputData.get("registeredBank")).toString().isEmpty()) {
             Snackbar.make(findViewById(android.R.id.content), "Link your Bank Account to your wallet first.", Snackbar.LENGTH_SHORT).show();
             showBankLinkDialog();
-            // Disable amount and submit button
+            // Disable amount input and submit button if bank account is not linked
             amountInput.setEnabled(false);
             submitReloadButton.setEnabled(false);
         }
 
         holderBankAccount = new HolderBankAccount();
 
+        // Set up submit button click listener
         submitReloadButton.setOnClickListener(view -> {
             String amountStr = amountInput.getText().toString().trim();
             if (validate(amountStr)) {
                 double amount = Double.parseDouble(amountStr);
-                // show processing text and progress bar
+                // Show processing text and progress bar
                 topUpProgressBar.setVisibility(View.VISIBLE);
                 topUpProcessingTextView.setVisibility(View.VISIBLE);
                 fetchBalanceAndTopUp(linkedBankDocRef, walletBalanceDocRef, amount);
             }
 
-            // temporary save
+            // Temporarily save data
             SecureStorageUtil.saveDataToKeystore(getApplicationContext(), "inputData", inputData);
         });
     }
 
+    /**
+     * Validates the entered amount.
+     * Checks if the amount is empty, non-numeric, or less than or equal to zero.
+     *
+     * @param amountStr The amount entered by the user.
+     * @return True if the amount is valid; false otherwise.
+     */
     private boolean validate(String amountStr) {
         if (amountStr.isEmpty()) {
             amountInput.setError("Amount is required");
@@ -123,6 +142,14 @@ public class walletTopUp extends AppCompatActivity implements BankLinkFragment.B
         return true;
     }
 
+    /**
+     * Fetches the balance from the bank account and processes the top-up.
+     * If the balance is sufficient, the wallet is topped up; otherwise, an error message is shown.
+     *
+     * @param linkedBankRef The reference to the linked bank account.
+     * @param walletRef The reference to the wallet to top up.
+     * @param amount The amount to top up.
+     */
     private void fetchBalanceAndTopUp(String linkedBankRef, String walletRef, double amount) {
         holderBankAccount.getBalance(linkedBankRef, new HolderBankAccount.BalanceCallback() {
             @Override
@@ -145,6 +172,14 @@ public class walletTopUp extends AppCompatActivity implements BankLinkFragment.B
         });
     }
 
+    /**
+     * Tops up the wallet with the specified amount.
+     * On success, the transaction is recorded and a success message is shown.
+     * On failure, an error message is displayed.
+     *
+     * @param walletRef The reference to the wallet to top up.
+     * @param amount The amount to top up.
+     */
     private void topUpWallet(String walletRef, double amount) {
         holderBankAccount.topUpWallet(walletRef, amount, new HolderBankAccount.TopUpCallback() {
             @Override
@@ -164,8 +199,13 @@ public class walletTopUp extends AppCompatActivity implements BankLinkFragment.B
         });
     }
 
+    /**
+     * Records the top-up transaction in Firestore.
+     * The transaction includes the title, amount, datetime, and user reference.
+     *
+     * @param amount The amount topped up.
+     */
     private void recordTransaction(double amount) {
-
         Map<String, Object> transaction = new HashMap<>();
         transaction.put("title", "Wallet Top Up");
         transaction.put("amount", amount);
@@ -178,10 +218,22 @@ public class walletTopUp extends AppCompatActivity implements BankLinkFragment.B
                 .addOnFailureListener(e -> Log.e(TAG, "Failed to record transaction", e));
     }
 
+    /**
+     * Gets the current datetime in the format "yyyy-MM-dd HH:mm:ss".
+     *
+     * @return The current datetime as a string.
+     */
     private String getCurrentDatetime() {
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
     }
 
+    /**
+     * Shows a dialog with the specified title and message.
+     * If the title indicates a successful transaction, navigates back to the Dashboard.
+     *
+     * @param title The title of the dialog.
+     * @param message The message to display in the dialog.
+     */
     private void showTransactionDialog(String title, String message) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(title);
@@ -196,11 +248,12 @@ public class walletTopUp extends AppCompatActivity implements BankLinkFragment.B
         builder.show();
     }
 
+    /**
+     * Shows a dialog to link a bank account.
+     * If the bank account is successfully linked, enables the amount input and submit button.
+     */
     private void showBankLinkDialog() {
         FragmentManager fragmentManager = getSupportFragmentManager();
-
-        // Retrieve holderRefId from inputData
-        // String holderRefId = (String) inputData.get("holderRefId");
 
         BankLinkFragment bankLinkFragment = BankLinkFragment.newInstance(holderRefId);
         bankLinkFragment.setStyle(DialogFragment.STYLE_NORMAL, R.style.BottomSheetDialogLinkBankTheme);
@@ -214,8 +267,8 @@ public class walletTopUp extends AppCompatActivity implements BankLinkFragment.B
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            // Handle back button click
-            startActivity(new Intent(this, Dashboard.class)); // to navigate back to Dashboard
+            // Handle back button click to navigate back to Dashboard
+            startActivity(new Intent(this, Dashboard.class));
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -223,7 +276,7 @@ public class walletTopUp extends AppCompatActivity implements BankLinkFragment.B
 
     @Override
     public void onBankLinked(DocumentReference documentReference) {
-        // This method is called when bank linking is successful in BankLinkFragment
+        // Called when the bank is successfully linked in BankLinkFragment
         inputData.put("registeredBank", "yes");
         inputData.put("linkedBankRef", documentReference.getId());
         SecureStorageUtil.saveDataToKeystore(getApplicationContext(), "inputData", inputData);

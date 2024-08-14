@@ -38,15 +38,20 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Objects;
 
+/**
+ * Activity for receiving money. Handles initialization, setting up UI elements,
+ * listening to balance and transaction updates, and managing QR code generation
+ * and validation.
+ */
 public class moneyReceive extends AppCompatActivity {
 
-    private static final String TAG = "moneyReceiveClass";
-    private FirebaseFirestore db;
-    private String holderRefId;
-    private String balanceRefId;
-    private ListenerRegistration balanceListener;
-    private ListenerRegistration transactionListener;
-    private HashMap<String, Object> inputData;
+    private static final String TAG = "moneyReceiveClass"; // Tag for logging
+    private FirebaseFirestore db; // Firestore instance
+    private String holderRefId; // Reference ID for wallet holder
+    private String balanceRefId; // Reference ID for wallet balance
+    private ListenerRegistration balanceListener; // Listener for balance updates
+    private ListenerRegistration transactionListener; // Listener for transaction updates
+    private HashMap<String, Object> inputData; // Input data retrieved from secure storage
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,8 +61,8 @@ public class moneyReceive extends AppCompatActivity {
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
 
+        // Retrieve input data from secure storage
         inputData = SecureStorageUtil.retrieveDataFromKeystore(this, "inputData");
-
         balanceRefId = (String) inputData.get("balanceRefId");
         holderRefId = (String) inputData.get("holderRefId");
 
@@ -75,13 +80,14 @@ public class moneyReceive extends AppCompatActivity {
             getSupportActionBar().setTitle("Receive Payment");
         }
 
+        // Initialize UI components
         TextView walletIdNumberTextView = findViewById(R.id.walletIDNumber);
         ImageView walletIdNumberQRTextView = findViewById(R.id.qrCodeImageView);
         ProgressBar moneyReceiveProgressbar = findViewById(R.id.moneyReceiveProgressBar);
         TextView moneyReceiveStatusTextView = findViewById(R.id.paymentStatusTextView);
-
         Button submitRequestPaymentButton = findViewById(R.id.requestPaymentButton);
 
+        // Hide progress bar and status text view initially
         moneyReceiveProgressbar.setVisibility(View.INVISIBLE);
         moneyReceiveStatusTextView.setVisibility(View.INVISIBLE);
 
@@ -89,16 +95,20 @@ public class moneyReceive extends AppCompatActivity {
         walletIdNumberTextView.setText(walletIdStr);
         generateQRCode(walletIdStrQRData, walletIdNumberQRTextView);
 
-        // Listen for changes to balance and transactions
+        // Start listening for changes to balance and transactions
         listenToBalanceAndTransactions();
 
+        // Set OnClickListener for the submit button to handle payment requests
         submitRequestPaymentButton.setOnClickListener(v -> {
-            // Handle request payment button click
-            // This is where you would handle the logic for requesting payment
+            // Show dialog for requesting payment
             showRequestPaymentDialog();
         });
     }
 
+    /**
+     * Displays a dialog for requesting payment. Allows the user to enter a wallet ID
+     * and requested amount, generates a QR code, and handles form submission.
+     */
     private void showRequestPaymentDialog() {
         BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this, R.style.BottomSheetDialogTheme);
         View bottomSheetView = getLayoutInflater().inflate(R.layout.dialog_request_payment, findViewById(android.R.id.content), false);
@@ -112,11 +122,13 @@ public class moneyReceive extends AppCompatActivity {
         Button generateQRCodeButton = bottomSheetView.findViewById(R.id.generateQRCodeButton);
         Button clearButton = bottomSheetView.findViewById(R.id.cancelQRCodeButton);
 
+        // Initially hide the QR code image view
         qrCodeImageView.setVisibility(View.GONE);
 
+        // Set initial text for walletIdEditText
         walletIdEditText.setText(Objects.requireNonNull(inputData.get("walletId")).toString());
 
-        // Add TextWatcher to walletId EditText
+        // Add TextWatcher to walletId EditText to validate input
         walletIdEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int start, int count, int after) {
@@ -125,20 +137,21 @@ public class moneyReceive extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
+                // Clear failure icon and reset wallet holder text if input length is less than 10
                 if (charSequence.length() < 10) {
-                    // Clear failure icon if text length is less than 10
                     Log.d(TAG, "onTextChanged: charSequence.length() < 10");
                     assert walletHolder != null;
                     walletHolder.setText(R.string.wallet_holder);
                 } else if (charSequence.length() == 10) {
                     Log.d(TAG, "onTextChanged: charSequence.length() == 10");
-                    //walletIdEditText.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_baseline_123_24, null, null, null);
+                    // Validate wallet ID and proceed
                     validateWalletIdAndProceed(walletIdEditText.getText().toString().trim(), walletIdEditText, walletHolder);
                 }
             }
 
             @Override
             public void afterTextChanged(Editable editable) {
+                // Validate wallet ID and proceed if length is 10
                 if (editable.length() == 10) {
                     Log.d(TAG, "afterTextChanged: editable.length() == 10");
                     validateWalletIdAndProceed(walletIdEditText.getText().toString().trim(), walletIdEditText, walletHolder);
@@ -146,17 +159,19 @@ public class moneyReceive extends AppCompatActivity {
             }
         });
 
-        // Add OnFocusChangeListener to walletId EditText
+        // Add OnFocusChangeListener to walletId EditText to validate input when focus changes
         walletIdEditText.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) {
                 validateWalletIdAndProceed(walletIdEditText.getText().toString().trim(), walletIdEditText, walletHolder);
             }
         });
 
+        // Set OnClickListener for the generate QR code button
         generateQRCodeButton.setOnClickListener(v -> {
             String walletId = walletIdEditText.getText().toString().trim();
             String requestedAmount = requestedAmountEditText.getText().toString().trim();
 
+            // Validate wallet ID and requested amount
             if (walletId.isEmpty() || requestedAmount.isEmpty()) {
                 Toast.makeText(this, "Please enter Wallet ID and Requested Amount", Toast.LENGTH_SHORT).show();
                 return;
@@ -168,6 +183,7 @@ public class moneyReceive extends AppCompatActivity {
                     Toast.makeText(this, "Requested Amount should be greater than zero", Toast.LENGTH_SHORT).show();
                     return;
                 }
+                // Generate QR code with wallet ID and requested amount
                 String qrData = "{ \"walletId\": \"" + walletId + "\", \"requestedAmount\": \"" + requestedAmount + "\" }";
                 generateQRCode(qrData, qrCodeImageView);
                 qrCodeImageView.setVisibility(View.VISIBLE);
@@ -178,14 +194,21 @@ public class moneyReceive extends AppCompatActivity {
             }
         });
 
+        // Set OnClickListener for the clear button to dismiss the dialog
         clearButton.setOnClickListener(v -> bottomSheetDialog.dismiss());
 
+        // Show the bottom sheet dialog
         bottomSheetDialog.show();
-
     }
 
+    /**
+     * Validates the wallet ID and updates the wallet holder's name if valid.
+     *
+     * @param walletIdStr The wallet ID to validate.
+     * @param walletId The EditText containing the wallet ID.
+     * @param holder The TextView to display the wallet holder's name.
+     */
     private void validateWalletIdAndProceed(String walletIdStr, EditText walletId, TextView holder) {
-
         CollectionReference walletHoldersRef = db.collection("itu_challenge_wallet_holders");
         Query query = walletHoldersRef.whereEqualTo("walletId", walletIdStr);
 
@@ -203,6 +226,12 @@ public class moneyReceive extends AppCompatActivity {
         });
     }
 
+    /**
+     * Generates a QR code for the given data and sets it to the specified ImageView.
+     *
+     * @param walletId The data to encode in the QR code.
+     * @param qrCodeImageView The ImageView to display the generated QR code.
+     */
     private void generateQRCode(String walletId, ImageView qrCodeImageView) {
         BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
         try {
@@ -213,7 +242,12 @@ public class moneyReceive extends AppCompatActivity {
         }
     }
 
-    // Method to set icons
+    /**
+     * Sets an icon drawable for the given EditText.
+     *
+     * @param editText The EditText to set the icon on.
+     * @param resId The resource ID of the drawable to set.
+     */
     private void setIcon(EditText editText, int resId) {
         if (resId != 0) {
             Drawable icon = ContextCompat.getDrawable(this, resId);
@@ -226,6 +260,9 @@ public class moneyReceive extends AppCompatActivity {
         }
     }
 
+    /**
+     * Listens to changes in wallet transactions and updates the UI accordingly.
+     */
     private void listenToBalanceAndTransactions() {
         Query transactionQuery = db.collection("itu_challenge_wallet_transactions")
                 .whereEqualTo("receiver", holderRefId)
@@ -235,7 +272,7 @@ public class moneyReceive extends AppCompatActivity {
 
         transactionListener = transactionQuery.addSnapshotListener((transactionSnapshots, e) -> {
             if (e != null) {
-                runOnUiThread(()->showErrorDialog("Listen failed: " + e.getMessage()));
+                runOnUiThread(() -> showErrorDialog("Listen failed: " + e.getMessage()));
                 return;
             }
 
@@ -257,6 +294,12 @@ public class moneyReceive extends AppCompatActivity {
         });
     }
 
+    /**
+     * Queries the user's name and proceeds to update the UI with transaction details.
+     *
+     * @param amountReceived The amount received in the transaction.
+     * @param userId The ID of the user who made the transaction.
+     */
     private void queryUserNameAndProceed(Double amountReceived, String userId) {
         DocumentReference userDocRef = db.collection("itu_challenge_wallet_holders").document(userId);
 
@@ -270,20 +313,27 @@ public class moneyReceive extends AppCompatActivity {
                         queryBalanceAndUpdateUI(amountReceived, userName, senderWallet);
                     }
                 } else {
-                    runOnUiThread(()-> showErrorDialog("No user data found."));
+                    runOnUiThread(() -> showErrorDialog("No user data found."));
                 }
             } else {
-                runOnUiThread(()-> showErrorDialog("Failed to retrieve user: " + Objects.requireNonNull(task.getException()).getMessage()));
+                runOnUiThread(() -> showErrorDialog("Failed to retrieve user: " + Objects.requireNonNull(task.getException()).getMessage()));
             }
         });
     }
 
+    /**
+     * Queries the wallet balance and updates the UI with the transaction details.
+     *
+     * @param amountReceived The amount received in the transaction.
+     * @param userName The name of the user who made the transaction.
+     * @param SenderWallet The wallet ID of the sender.
+     */
     private void queryBalanceAndUpdateUI(Double amountReceived, String userName, String SenderWallet) {
         DocumentReference balanceDocRef = db.collection("itu_challenge_wallet_balances").document(balanceRefId);
 
         balanceListener = balanceDocRef.addSnapshotListener((balanceSnapshot, e) -> {
             if (e != null) {
-                runOnUiThread(()-> showErrorDialog("Listen failed: " + e.getMessage()));
+                runOnUiThread(() -> showErrorDialog("Listen failed: " + e.getMessage()));
                 return;
             }
 
@@ -299,11 +349,16 @@ public class moneyReceive extends AppCompatActivity {
                             + SenderWallet + "\nNew balance: " + formattedBalance + " \nDate Received: " + dateReceived));
                 }
             } else {
-                runOnUiThread(()->showErrorDialog("No balance data found."));
+                runOnUiThread(() -> showErrorDialog("No balance data found."));
             }
         });
     }
 
+    /**
+     * Shows a dialog with the transaction details.
+     *
+     * @param message The message to display in the dialog.
+     */
     private void showTransactionDialog(String message) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Transaction Successful");
@@ -312,6 +367,11 @@ public class moneyReceive extends AppCompatActivity {
         builder.show();
     }
 
+    /**
+     * Shows an error dialog with the provided message.
+     *
+     * @param message The error message to display in the dialog.
+     */
     private void showErrorDialog(String message) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Error");
@@ -323,6 +383,7 @@ public class moneyReceive extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
+            // Navigate to Dashboard when the home button is pressed
             startActivity(new Intent(this, Dashboard.class));
             finish();
             return true;
@@ -333,6 +394,7 @@ public class moneyReceive extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // Remove listeners to prevent memory leaks
         if (balanceListener != null) {
             balanceListener.remove();
         }

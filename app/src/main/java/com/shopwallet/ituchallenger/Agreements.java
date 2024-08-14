@@ -29,15 +29,20 @@ import java.util.Random;
 
 public class Agreements extends AppCompatActivity {
 
+    // Define a tag for logging
     private static final String TAG = "AgreementsClass";
+    // Checkboxes for different agreements
     private CheckBox agreeGccsCheckBox;
     private CheckBox agreePersonCheckBox;
     private CheckBox agreeDeviceCheckBox;
 
+    // A HashMap to store input data from previous activity
     private HashMap<String, Object> inputData;
 
+    // Variable to store the secret key
     private String secretKey = "";
 
+    // Firebase Firestore database instance
     private FirebaseFirestore db;
 
     @Override
@@ -48,75 +53,89 @@ public class Agreements extends AppCompatActivity {
         // Initialize Cloud Firestore
         db = FirebaseFirestore.getInstance();
 
-        // Retrieve the inputData from the Intent
+        // Retrieve the inputData from the Intent passed from the previous activity
         Intent intent = getIntent();
         inputData = (HashMap<String, Object>) intent.getSerializableExtra("inputData");
 
+        // Initialize CheckBoxes and Button
         agreeGccsCheckBox = findViewById(R.id.agreeGccsCheckBox);
         agreePersonCheckBox = findViewById(R.id.agreePersonCheckBox);
         agreeDeviceCheckBox = findViewById(R.id.agreeDeviceCheckBox);
         Button agreeAndRegisterNextButton = findViewById(R.id.agreeAndRegisterNextButton);
 
+        // Set an OnClickListener for the agree and register button
         agreeAndRegisterNextButton.setOnClickListener(view -> {
-            // Collect the agreement responses
+            // Collect the agreement responses and store them in inputData
             inputData.put("agreeGccs", agreeGccsCheckBox.isChecked());
             inputData.put("agreePerson", agreePersonCheckBox.isChecked());
             inputData.put("agreeDevice", agreeDeviceCheckBox.isChecked());
 
-            // Debug: Print inputData to log
+            // Debug: Print inputData to log for debugging
             for (Map.Entry<String, Object> entry : inputData.entrySet()) {
                 Log.d(TAG, "Key: " + entry.getKey() + ", Value: " + entry.getValue() + ", Value Type: " + entry.getValue().getClass().getName() + "\n\n");
             }
 
-            // Call the registerUser function
+            // Call the registerUser function to proceed with user registration
             registerUser(inputData);
         });
     }
 
+    /**
+     * Registers the user using the BsaSdk and stores the necessary information in Firestore.
+     */
     private void registerUser(HashMap<String, Object> inputData) {
-        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token -> inputData.put("token", token)).addOnFailureListener(e -> handleRegistrationError("Failed to get Firebase token: " + e.getMessage()));
+        // Get Firebase messaging token and add it to inputData
+        FirebaseMessaging.getInstance().getToken()
+                .addOnSuccessListener(token -> inputData.put("token", token))
+                .addOnFailureListener(e -> handleRegistrationError("Failed to get Firebase token: " + e.getMessage()));
 
-        // Debug: Print inputData to log
+        // Debug: Print inputData to log for debugging
         for (Map.Entry<String, Object> entry : inputData.entrySet()) {
             Log.d(TAG, "Key: " + entry.getKey() + ", Value: " + entry.getValue() + ", Value Type: " + entry.getValue().getClass().getName());
         }
 
+        // Register the user using the BsaSdk
         BsaSdk.getInstance().getSdkService().registerUser(inputData, new SdkResponseCallback<>() {
-                @Override
-                public void onSuccess(RegisterUserResponse result) {
-                    Log.d(TAG, "User registration successful, " + result.rtCode + " and RtMsg: " + result.rtMsg + " ");
-                    if (result.data.secretKey == null) {
-                        Log.e(TAG, "Secret key is null ++++++++++");
+            @Override
+            public void onSuccess(RegisterUserResponse result) {
+                Log.d(TAG, "User registration successful, " + result.rtCode + " and RtMsg: " + result.rtMsg + " ");
+                if (result.data.secretKey == null) {
+                    Log.e(TAG, "Secret key is null ++++++++++");
+                } else {
+                    Log.e(TAG, "Secret key is not null: " + result.data.secretKey);
+                    // Store the secret key and proceed with Firestore operations
+                    secretKey = result.data.secretKey;
+                    inputData.put("secretKey", secretKey);
+                    SecureStorageUtil.saveSecretKeyToKeystore(getApplicationContext(), secretKey);
 
-                    } else {
-                        Log.e(TAG, "Secret key is not null" + result.data.secretKey);
-                        // Handle the null secret key case
-                        secretKey = result.data.secretKey;
-                        inputData.put("secretKey", secretKey);
-                        SecureStorageUtil.saveSecretKeyToKeystore(getApplicationContext(), secretKey);
+                    // Add user data to Firestore
+                    addDocumentToFirestore(inputData);
 
-                        addDocumentToFirestore(inputData);
+                    // Save inputData to secure storage
+                    SecureStorageUtil.saveDataToKeystore(getApplicationContext(), "inputData", inputData);
 
-                        // save input data
-                        SecureStorageUtil.saveDataToKeystore(getApplicationContext(), "inputData", inputData);
-
-                        runOnUiThread(() -> {
-                            Toast.makeText(Agreements.this, "User registration successful", Toast.LENGTH_LONG).show();
-                            // Navigate to the RegistrationCompleted activity
-                            Intent registrationCompletedIntent = new Intent(Agreements.this, RegistrationCompleted.class);
-                            startActivity(registrationCompletedIntent);finish();
-                        });
-                    }
+                    // Notify the user of successful registration and navigate to the next activity
+                    runOnUiThread(() -> {
+                        Toast.makeText(Agreements.this, "User registration successful", Toast.LENGTH_LONG).show();
+                        // Navigate to the RegistrationCompleted activity
+                        Intent registrationCompletedIntent = new Intent(Agreements.this, RegistrationCompleted.class);
+                        startActivity(registrationCompletedIntent);
+                        finish();
+                    });
                 }
+            }
 
-                @Override
-                public void onFailed(ErrorResult errorResult) {
-                    handleRegistrationError(errorResult.getErrorCode(), errorResult.getErrorMessage());
-                }
+            @Override
+            public void onFailed(ErrorResult errorResult) {
+                // Handle registration errors
+                handleRegistrationError(errorResult.getErrorCode(), errorResult.getErrorMessage());
+            }
         });
-
     }
 
+    /**
+     * Adds a new document to Firestore for the registered user or updates an existing inactive document.
+     */
     private void addDocumentToFirestore(HashMap<String, Object> inputData) {
         String userKey = Objects.requireNonNull(inputData.get("userKey")).toString();
 
@@ -189,7 +208,9 @@ public class Agreements extends AppCompatActivity {
                 });
     }
 
-
+    /**
+     * Adds a wallet balance document to the Firestore collection.
+     */
     private void addWalletBalanceToFirestore(String walletId, String documentRefId) {
         Map<String, Object> balanceData = new HashMap<>();
         balanceData.put("walletId", walletId);
@@ -213,6 +234,10 @@ public class Agreements extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Handles registration errors by displaying an alert dialog.
+     */
+
     private void handleRegistrationError(String errorMessage) {
         Log.e(TAG, errorMessage);
         runOnUiThread(() -> new AlertDialog.Builder(this)
@@ -223,6 +248,9 @@ public class Agreements extends AppCompatActivity {
                 .show());
     }
 
+    /**
+     * Handles registration errors by displaying an alert dialog.
+     */
     private void handleRegistrationError(int errorCode, String errorMessage) {
         String userFriendlyMessage;
         switch (errorCode) {
@@ -257,6 +285,9 @@ public class Agreements extends AppCompatActivity {
                 .show());
     }
 
+    /**
+     * Handles errors related to Firestore operations.
+     */
     private void handleFirestoreError(String errorMessage) {
         Log.e(TAG, errorMessage);
         runOnUiThread(() -> new AlertDialog.Builder(this)

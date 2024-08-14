@@ -25,15 +25,19 @@ import com.shopwallet.ituchallenger.util.SecureStorageUtil;
 
 import java.util.HashMap;
 
+/**
+ * VerifyOTP is an activity that handles the OTP verification process.
+ * It allows the user to enter a 6-digit OTP and verifies it using the BSA SDK.
+ */
 public class VerifyOTP extends AppCompatActivity {
 
-    private static final String TAG = "VerifyOTPClass";
-    private HashMap<String, Object> inputData;
+    private static final String TAG = "VerifyOTPClass"; // Tag for logging
+    private HashMap<String, Object> inputData; // Stores input data passed between activities
 
-    private EditText otpDigit1, otpDigit2, otpDigit3, otpDigit4, otpDigit5, otpDigit6;
-    private ProgressBar progressBar;
+    private EditText otpDigit1, otpDigit2, otpDigit3, otpDigit4, otpDigit5, otpDigit6; // EditText fields for OTP digits
+    private ProgressBar progressBar; // ProgressBar to indicate loading state
 
-    private static String from = "";
+    private static String from = ""; // Indicates the source activity or action
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,13 +48,16 @@ public class VerifyOTP extends AppCompatActivity {
         Intent intent = getIntent();
         inputData = (HashMap<String, Object>) intent.getSerializableExtra("inputData");
         if (inputData == null) {
+            // If inputData is null, retrieve it from secure storage
             inputData = SecureStorageUtil.retrieveDataFromKeystore(getApplicationContext(), "inputData");
         }
         String email = (String) inputData.get("email");
 
+        // Initialize UI elements
         TextView otpEmailTextView = findViewById(R.id.otpEmailTextView);
         TextView timeRemainingTextView = findViewById(R.id.timeRemainingTextView);
         TextView timeTextView = findViewById(R.id.timeTextView);
+
         // Retrieve OTP from EditTexts
         otpDigit1 = findViewById(R.id.otpDigit1);
         otpDigit2 = findViewById(R.id.otpDigit2);
@@ -59,14 +66,14 @@ public class VerifyOTP extends AppCompatActivity {
         otpDigit5 = findViewById(R.id.otpDigit5);
         otpDigit6 = findViewById(R.id.otpDigit6);
 
-        // set up the progress bar
+        // Set up the progress bar
         progressBar = findViewById(R.id.verifyOtpProgressBar);
         progressBar.setVisibility(View.GONE);
 
-        // Set up OTP digit fields to shift focus to next field
+        // Set up OTP digit fields to shift focus to the next field
         setupOtpEditTexts();
 
-        // Set email value
+        // Set the email value in the UI
         if (email != null) {
             otpEmailTextView.setText(email);
         }
@@ -78,26 +85,37 @@ public class VerifyOTP extends AppCompatActivity {
         // Set the Next Navigation function
         Button nextCreateAccountButton = findViewById(R.id.selectAuthTypeNextButton);
 
+        // Determine the source activity or action
         from = intent.getStringExtra("from");
-        Log.d(TAG,"Value of from is: " + from);
+        Log.d(TAG, "Value of from is: " + from);
         if ("Dashboard".equals(from)) {
-            nextCreateAccountButton.setText(R.string.cancel);
+            nextCreateAccountButton.setText(R.string.cancel); // Set button text to "Cancel" if from Dashboard
         }
 
+        // Set OnClickListener for the Next button
         nextCreateAccountButton.setOnClickListener(view -> {
             if ("createAccount".equals(from) || "signIn".equals(from)) {
+                // Prompt user to enter OTP if from createAccount or signIn
                 promptUserForOtp(email);
             } else if ("Dashboard".equals(from)) {
+                // Navigate to Dashboard if from Dashboard
                 Intent completeRegistrationIntent = new Intent(VerifyOTP.this, Dashboard.class);
                 startActivity(completeRegistrationIntent);
             } else {
+                // Navigate to RegistrationCompleted for other cases
                 Intent completeRegistrationIntent = new Intent(VerifyOTP.this, RegistrationCompleted.class);
                 startActivity(completeRegistrationIntent);
             }
         });
     }
 
+    /**
+     * Prompts the user to enter the OTP and initiates verification if a valid OTP is entered.
+     *
+     * @param email The user's email associated with the OTP.
+     */
     private void promptUserForOtp(String email) {
+        // Concatenate the OTP digits from the EditText fields
         String otp = otpDigit1.getText().toString() +
                 otpDigit2.getText().toString() +
                 otpDigit3.getText().toString() +
@@ -105,24 +123,32 @@ public class VerifyOTP extends AppCompatActivity {
                 otpDigit5.getText().toString() +
                 otpDigit6.getText().toString();
 
+        // Check if the OTP has 6 digits
         if (otp.length() == 6) {
-            progressBar.setVisibility(View.VISIBLE);
+            progressBar.setVisibility(View.VISIBLE); // Show progress bar while verifying OTP
             confirmEmailVerification(email, otp);
         } else {
             Toast.makeText(this, "Please enter a valid 6-digit OTP.", Toast.LENGTH_SHORT).show();
         }
     }
 
+    /**
+     * Confirms the email verification by sending the OTP to the server via the BSA SDK.
+     *
+     * @param email The user's email to verify.
+     * @param otp   The 6-digit OTP entered by the user.
+     */
     private void confirmEmailVerification(String email, String otp) {
         HashMap<String, Object> params = new HashMap<>();
-        params.put("clientKey", CLIENT_KEY);
-        params.put("email", email);
-        params.put("authNum", otp);
+        params.put("clientKey", CLIENT_KEY); // Add client key to parameters
+        params.put("email", email); // Add email to parameters
+        params.put("authNum", otp); // Add OTP to parameters
 
+        // Call the BSA SDK to verify the OTP
         BsaSdk.getInstance().getSdkService().verifyOtpByEmail(params, new SdkResponseCallback<>() {
             @Override
             public void onSuccess(VerifyOtpResponse result) {
-                progressBar.setVisibility(View.GONE);
+                progressBar.setVisibility(View.GONE); // Hide progress bar on success
                 if (result != null && result.getRtCode() == 0) {
                     // Email verified successfully
                     Log.d(TAG, "Email verified successfully.");
@@ -136,25 +162,30 @@ public class VerifyOTP extends AppCompatActivity {
                     twoFactorIntent.putExtra("from", from);
                     twoFactorIntent.putExtra("inputData", inputData);
                     startActivity(twoFactorIntent);
-                    finish();
+                    finish(); // Close the current activity
                 } else {
                     assert result != null;
                     Log.d(TAG, "Failed to verify email, code: " + result.getRtCode());
-                    handleError(result.getRtCode());
+                    handleError(result.getRtCode()); // Handle verification error
                 }
             }
 
             @Override
             public void onFailed(ErrorResult errorResult) {
-                progressBar.setVisibility(View.GONE);
+                progressBar.setVisibility(View.GONE); // Hide progress bar on failure
                 if (errorResult != null) {
                     Log.d(TAG, "Failed to verify email, error: " + errorResult.getErrorMessage());
                     Toast.makeText(VerifyOTP.this, "Error verifying OTP: " + errorResult.getErrorMessage(), Toast.LENGTH_SHORT).show();
                 }
             }
-            });
-        }
+        });
+    }
 
+    /**
+     * Handles error codes returned by the BSA SDK during OTP verification.
+     *
+     * @param errorCode The error code returned by the SDK.
+     */
     private void handleError(int errorCode) {
         String message;
         switch (errorCode) {
@@ -243,14 +274,28 @@ public class VerifyOTP extends AppCompatActivity {
             showDialog(message);
         }
 
-        private void showDialog(String message) {
-            new AlertDialog.Builder(this)
-                    .setTitle("Error")
-                    .setMessage(message)
-                    .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
-                    .show();
-        }
+    /**
+     * Shows an alert dialog with the specified error message.
+     * This method creates and displays an AlertDialog with a title of "Error" and
+     * a message passed as a parameter. It includes a single button that dismisses the dialog.
+     *
+     * @param message The error message to display in the dialog.
+     */
+    private void showDialog(String message) {
+        new AlertDialog.Builder(this)
+                .setTitle("Error")
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
+                .show();
+    }
 
+    /**
+     * Sets up TextWatchers for OTP EditText fields to handle focus management.
+     * This method assigns a TextWatcher to each OTP EditText field to automatically
+     * move focus to the next field when a digit is entered, and move back to the previous
+     * field if a digit is deleted. This ensures a smooth user experience while entering
+     * OTP digits.
+     */
     private void setupOtpEditTexts() {
         otpDigit1.addTextChangedListener(new OtpTextWatcher(otpDigit2, null));
         otpDigit2.addTextChangedListener(new OtpTextWatcher(otpDigit3, otpDigit1));
@@ -260,10 +305,22 @@ public class VerifyOTP extends AppCompatActivity {
         otpDigit6.addTextChangedListener(new OtpTextWatcher(null, otpDigit5));
     }
 
+    /**
+     * A TextWatcher implementation for managing focus between OTP digit EditTexts.
+     * This class handles focus shifting between EditTexts based on user input.
+     * When a digit is entered, focus shifts to the next EditText. If a digit is deleted,
+     * focus moves to the previous EditText.
+     */
     private static class OtpTextWatcher implements TextWatcher {
-        private final EditText nextView;
-        private final EditText prevView;
+        private final EditText nextView; // The EditText to move focus to
+        private final EditText prevView; // The EditText to move focus from
 
+        /**
+         * Constructor for OtpTextWatcher.
+         *
+         * @param nextView The EditText to focus on after entering a digit.
+         * @param prevView The EditText to focus on if a digit is deleted.
+         */
         public OtpTextWatcher(EditText nextView, EditText prevView) {
             this.nextView = nextView;
             this.prevView = prevView;
@@ -277,9 +334,11 @@ public class VerifyOTP extends AppCompatActivity {
 
         @Override
         public void afterTextChanged(Editable s) {
+            // Move focus to the next EditText if one character is entered
             if (s.length() == 1 && nextView != null) {
                 nextView.requestFocus();
             } else if (s.length() == 0 && prevView != null) {
+                // Move focus to the previous EditText if a character is deleted
                 prevView.requestFocus();
             }
         }

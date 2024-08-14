@@ -16,15 +16,19 @@ import com.shopwallet.ituchallenger.util.SecureStorageUtil;
 import java.util.HashMap;
 import java.util.HashSet;
 
+/**
+ * FirebasePushService handles incoming Firebase Cloud Messaging (FCM) messages.
+ * It processes authentication requests, performs local authentication, and manages token registration.
+ */
 public class FirebasePushService extends FirebaseMessagingService {
 
     private static final String TAG = "FirebasePushService";
     private static RemoteMessage currentRemoteMessage;
     private static final String ACTION_AUTHENTICATE = "com.shopwallet.ituchallenger.ACTION_AUTHENTICATE";
     private static final HashSet<String> processedMessages = new HashSet<>();
-    private static final long BROADCAST_DELAY_MS = 5000; // 5 seconds delay
+    private static final long BROADCAST_DELAY_MS = 5000; // 5 seconds delay to throttle broadcasts
 
-    // Declare and initialize lastBroadcastTime
+    // Time of the last broadcast to throttle messages
     private long lastBroadcastTime = 0;
 
     @Override
@@ -34,6 +38,7 @@ public class FirebasePushService extends FirebaseMessagingService {
 
         String messageId = remoteMessage.getMessageId();
         if (messageId != null && processedMessages.contains(messageId)) {
+            // Skip processing if the message has already been processed
             Log.d(TAG, "Duplicate message received, ignoring: " + messageId);
             return;
         }
@@ -71,17 +76,23 @@ public class FirebasePushService extends FirebaseMessagingService {
         }
     }
 
+    /**
+     * Performs local authentication based on the provided authentication type.
+     * Sends a broadcast if the authentication type requires it.
+     *
+     * @param authType The type of authentication to perform.
+     */
     private void performLocalAuth(String authType) {
         switch (authType) {
             case "3":
             case "4":
-                // Throttle broadcasts
+                // Throttle broadcasts to avoid sending multiple in quick succession
                 if (System.currentTimeMillis() - lastBroadcastTime > BROADCAST_DELAY_MS) {
                     lastBroadcastTime = System.currentTimeMillis();
-                    // Send broadcast to trigger authentication in an activity
+                    // Create and send a broadcast intent to trigger authentication
                     Intent authIntent = new Intent(ACTION_AUTHENTICATE);
                     authIntent.putExtra("authType", authType);
-                    authIntent.putExtra("broadcastId", String.valueOf(System.currentTimeMillis())); // Adding a unique identifier
+                    authIntent.putExtra("broadcastId", String.valueOf(System.currentTimeMillis())); // Unique identifier for the broadcast
                     sendBroadcast(authIntent);
                     Log.e(TAG, "Broadcast Sent: " + authType);
                     Log.e(TAG, "Broadcast ID: " + System.currentTimeMillis());
@@ -90,22 +101,30 @@ public class FirebasePushService extends FirebaseMessagingService {
                 }
                 break;
             default:
-                // Handle other cases if necessary
+                // Handle other authentication types if necessary
                 Log.d(TAG, "Unknown authType: " + authType);
                 break;
         }
     }
 
+    /**
+     * Shows a Snackbar message to the user by sending a broadcast.
+     *
+     * @param message The message to display in the Snackbar.
+     */
     private void showSnackbar(String message) {
         Intent intent = new Intent(Dashboard.ACTION_SHOW_SNACKBAR);
         intent.putExtra(Dashboard.EXTRA_SNACKBAR_MESSAGE, message);
         sendBroadcast(intent);
     }
 
+    /**
+     * Called when authentication is completed successfully.
+     * This method is a placeholder and can be expanded as needed.
+     */
     public static void completeAuth() {
-        // Method to be called when authentication is completed successfully
         if (currentRemoteMessage != null) {
-            Log.d(TAG, "authentication is completed successfully");
+            Log.d(TAG, "Authentication is completed successfully");
         }
     }
 
@@ -118,6 +137,11 @@ public class FirebasePushService extends FirebaseMessagingService {
         registerPushToken(token);
     }
 
+    /**
+     * Registers the new push token with the BSA SDK.
+     *
+     * @param token The new push token to register.
+     */
     private void registerPushToken(String token) {
         try {
             BsaSdk.getInstance().getSdkService().registerPushToken(token, new SdkResponseCallback<>() {

@@ -25,9 +25,14 @@ import com.shopwallet.ituchallenger.util.SessionManager;
 
 import java.util.HashMap;
 
+/**
+ * Activity that confirms the removal of a device from the user's account.
+ * Provides functionality to show a confirmation dialog, unregister the device,
+ * handle authentication errors, and manage user sessions.
+ */
 public class ConfirmRemoveDevice extends AppCompatActivity {
 
-    private static final String TAG = "PersonalInfoClass";
+    private static final String TAG = "ConfirmRemoveDevice";
     private HashMap<String, Object> storedInputData;
 
     @Override
@@ -35,17 +40,18 @@ public class ConfirmRemoveDevice extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_confirm_remove_device);
 
+        // Retrieve stored input data from secure storage
         storedInputData = SecureStorageUtil.retrieveDataFromKeystore(this, "inputData");
 
-        // Set the Confirm button functionality
+        // Initialize and set up the Confirm button
         Button confirmButton = findViewById(R.id.confirmButton);
-
-        confirmButton.setOnClickListener(view -> {
-            // Show the de-register device dialog
-            showRemoveDeviceDialog();
-        });
+        confirmButton.setOnClickListener(view -> showRemoveDeviceDialog());
     }
 
+    /**
+     * Displays a dialog to confirm the removal of the device.
+     * Provides options to confirm or cancel the action.
+     */
     private void showRemoveDeviceDialog() {
         BottomSheetDialog dialog = new BottomSheetDialog(this, R.style.BottomSheetDialogTheme);
         View view = getLayoutInflater().inflate(R.layout.dialog_remove_device, findViewById(android.R.id.content), false);
@@ -54,26 +60,32 @@ public class ConfirmRemoveDevice extends AppCompatActivity {
         Button buttonYes = dialog.findViewById(R.id.deleteAccountYesDialogButton);
         Button buttonCancel = dialog.findViewById(R.id.deleteAccountCancelDialogButton);
 
+        // Handle Yes button click to proceed with device unregistration
         assert buttonYes != null;
         buttonYes.setOnClickListener(v -> {
-            // Handle Yes button click
             unregisterDevice();
             dialog.dismiss();
         });
 
+        // Handle Cancel button click to return to the PersonalInfo activity
         assert buttonCancel != null;
         buttonCancel.setOnClickListener(v -> {
             Intent intent = new Intent(ConfirmRemoveDevice.this, PersonalInfo.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
-            finish(); // Finish the current activity
+            finish(); // Close the current activity
             dialog.dismiss();
         });
+
         dialog.show();
     }
 
+    /**
+     * Unregisters the device using the BSA SDK.
+     * Handles success and failure responses, including in-app authentication if needed.
+     */
     private void unregisterDevice() {
-        // Retrieve the userKey
+        // Retrieve the userKey from stored input data
         String userKey = (String) storedInputData.get("userKey");
 
         if (userKey != null) {
@@ -89,6 +101,7 @@ public class ConfirmRemoveDevice extends AppCompatActivity {
 
                     @Override
                     public void onFailed(ErrorResult errorResult) {
+                        // Handle failure response based on error code
                         if (errorResult.getErrorCode() == 2105) {
                             callInAppAuthenticator(userKey);
                         } else {
@@ -100,7 +113,7 @@ public class ConfirmRemoveDevice extends AppCompatActivity {
                     }
                 });
             } else {
-                // Show dialog to inform the user to sign in again
+                // Show dialog to prompt the user to sign in again
                 runOnUiThread(() -> new androidx.appcompat.app.AlertDialog.Builder(ConfirmRemoveDevice.this)
                         .setTitle("Sign In Required")
                         .setMessage("Your session has expired. Please sign in again to continue.")
@@ -109,7 +122,7 @@ public class ConfirmRemoveDevice extends AppCompatActivity {
                             Intent intent = new Intent(ConfirmRemoveDevice.this, SignIn.class);
                             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                             startActivity(intent);
-                            finish(); // Finish the current activity
+                            finish(); // Close the current activity
                         })
                         .setCancelable(false)
                         .show());
@@ -122,13 +135,17 @@ public class ConfirmRemoveDevice extends AppCompatActivity {
         }
     }
 
+    /**
+     * Logs out the user from Firebase and navigates to the SignIn activity.
+     * Shows a Snackbar with a message and delays navigation to allow the Snackbar to be displayed.
+     */
     private void logOutFirebaseAndNavigateToSignIn() {
         FirebaseAuth.getInstance().signOut();
 
-        // Display SnackBar
+        // Display SnackBar to inform the user
         runOnUiThread(() -> {
             Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Device removed", Snackbar.LENGTH_LONG);
-            snackbar.setAnchorView(findViewById(R.id.dashboardBottomNavigation)); // Adjust if you have a BottomNavigationView
+            snackbar.setAnchorView(findViewById(R.id.dashboardBottomNavigation)); // Adjust if needed
             snackbar.show();
 
             // Delay the navigation to allow Snackbar to be displayed
@@ -138,11 +155,16 @@ public class ConfirmRemoveDevice extends AppCompatActivity {
                 startActivity(intent);
                 // Log out from the session
                 SessionManager.getInstance(getApplicationContext()).logout();
-                finish(); // Finish the current activity
+                finish(); // Close the current activity
             }, Snackbar.LENGTH_LONG + 2000); // Delay in milliseconds
         });
     }
 
+    /**
+     * Calls the in-app authenticator to handle authentication if needed.
+     *
+     * @param userKey The key of the user to authenticate.
+     */
     private void callInAppAuthenticator(String userKey) {
         BsaSdk.getInstance().getSdkService().appAuthenticator(userKey, true, this, new SdkAuthResponseCallback<>() {
             @Override

@@ -43,6 +43,29 @@ import com.shopwallet.ituchallenger.util.SecureStorageUtil;
 import java.util.HashMap;
 import java.util.concurrent.Executor;
 
+/**
+ * Activity for handling OTP (One-Time Password) authentication in the ShopWallet application.
+ *
+ * <p>This activity facilitates OTP generation, cancellation, and authentication processes. It
+ * supports various authentication methods, including biometric and PIN/pattern authentication.</p>
+ *
+ * <p>Key functionalities include:</p>
+ * <ul>
+ *     <li>Retrieving user key from secure storage.</li>
+ *     <li>Requesting OTP code from the BSA SDK.</li>
+ *     <li>Handling OTP cancellation.</li>
+ *     <li>Performing biometric authentication if available.</li>
+ *     <li>Fallback to PIN/pattern authentication if biometric authentication is not set up.</li>
+ *     <li>Showing success or failure messages based on the authentication result.</li>
+ *     <li>Handling broadcasts for OTP authentication and showing Snackbar messages.</li>
+ * </ul>
+ *
+ * <p>BroadcastReceivers are used to handle authentication actions and display Snackbar messages.
+ * The activity also ensures proper cleanup by unregistering receivers in the `onDestroy` method.</p>
+ *
+ * <p>UI components include a Toolbar, TextView for displaying OTP, Buttons for canceling or
+ * re-generating OTP, and a ProgressBar to indicate ongoing processes.</p>
+ */
 
 @SuppressWarnings("ALL")
 public class OtpAuth extends AppCompatActivity {
@@ -62,29 +85,43 @@ public class OtpAuth extends AppCompatActivity {
     public static final String EXTRA_SNACKBAR_MESSAGE = "com.shopwallet.ituchallenger.EXTRA_SNACKBAR_MESSAGE";
 
     private final BroadcastReceiver authReceiver = new BroadcastReceiver() {
+        /**
+         * Receives broadcast intents related to authentication requests.
+         * Based on the `authType` received in the intent, it performs either biometric or PIN/pattern authentication.
+         *
+         * @param context The context in which the receiver is running.
+         * @param intent The intent containing the authentication action and type.
+         */
         @Override
         public void onReceive(Context context, Intent intent) {
             if (ACTION_AUTHENTICATE.equals(intent.getAction())) {
                 Log.e(TAG, "Broadcast Received from FirebasePushService");
                 String authType = intent.getStringExtra("authType");
-                // channelKey = intent.getStringExtra("channel_key");
 
+                // Handle different authentication types
                 if ("3".equals(authType)) {
-                    performBiometricAuth();
+                    performBiometricAuth(); // Perform biometric authentication
                 } else if ("4".equals(authType)) {
-                    performPinPatternAuth();
+                    performPinPatternAuth(); // Perform PIN/Pattern authentication
                 }
             }
         }
     };
 
     private final BroadcastReceiver snackbarReceiver = new BroadcastReceiver() {
+        /**
+         * Receives broadcast intents to show a Snackbar message.
+         * Displays the message using `showSnackbar` method if a valid message is received.
+         *
+         * @param context The context in which the receiver is running.
+         * @param intent The intent containing the action and message for the Snackbar.
+         */
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent != null && ACTION_SHOW_SNACKBAR.equals(intent.getAction())) {
                 String message = intent.getStringExtra(EXTRA_SNACKBAR_MESSAGE);
                 if (message != null && !message.isEmpty()) {
-                    showSnackbar(message);
+                    showSnackbar(message); // Display the Snackbar with the message
                 }
             }
         }
@@ -111,16 +148,18 @@ public class OtpAuth extends AppCompatActivity {
 
         otpTextView.setVisibility(View.INVISIBLE);
 
-        // Replace with actual user key retrieval
+        // Retrieve user key from secure storage
         HashMap<String, Object> inputData = SecureStorageUtil.retrieveDataFromKeystore(getApplicationContext(), "inputData");
         userKey = (String) inputData.get("userKey");
 
+        // Check access token and request OTP code
         checkAccessTokenAndRequestOtp();
 
-        cancelButton.setOnClickListener(v -> cancelOtpCode());
-        reGenerateButton.setOnClickListener(v -> requestOtpCode());
+        // Set up click listeners for buttons
+        cancelButton.setOnClickListener(v -> cancelOtpCode()); // Cancel OTP code
+        reGenerateButton.setOnClickListener(v -> requestOtpCode()); // Request new OTP code
 
-        // Register the BroadcastReceiver
+        // Register BroadcastReceiver for authentication
         if (!isReceiverRegistered) {
             IntentFilter filter = new IntentFilter(ACTION_AUTHENTICATE);
             registerReceiver(authReceiver, filter);
@@ -128,36 +167,40 @@ public class OtpAuth extends AppCompatActivity {
             Log.e(TAG, "BroadcastReceiver registered");
         }
 
-        // Register the BroadcastReceiver
+        // Register BroadcastReceiver for Snackbar messages
         IntentFilter filter = new IntentFilter(ACTION_SHOW_SNACKBAR);
         registerReceiver(snackbarReceiver, filter);
-    } // end of onCreate
+    }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Unregister the BroadcastReceiver
+        // Unregister BroadcastReceivers to avoid memory leaks
         if (isReceiverRegistered) {
             unregisterReceiver(authReceiver);
             isReceiverRegistered = false;
             Log.e(TAG, "BroadcastReceiver unregistered");
         }
 
-        // Unregister the BroadcastReceiver
         unregisterReceiver(snackbarReceiver);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            // Handle back button click
-            startActivity(new Intent(this, Dashboard.class)); // to navigate back to MainActivity
+            // Handle the back button click
+            startActivity(new Intent(this, Dashboard.class)); // Navigate back to Dashboard
             finish();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
+
+    /**
+     * Checks if an access token is available. If it is, requests an OTP code.
+     * If not, starts in-app authentication and then requests an OTP code.
+     */
     private void checkAccessTokenAndRequestOtp() {
         String accessToken = SdkUtil.getAccessToken();
 
@@ -170,6 +213,10 @@ public class OtpAuth extends AppCompatActivity {
         }
     }
 
+    /**
+     * Requests an OTP code from the BSA SDK and handles the response.
+     * Displays the OTP code on the UI and shows a progress bar while the request is in progress.
+     */
     private void requestOtpCode() {
         progressBar.setVisibility(View.VISIBLE);
         BsaSdk.getInstance().getSdkService().getAuthOtpCode(new SdkResponseCallback<>() {
@@ -197,6 +244,10 @@ public class OtpAuth extends AppCompatActivity {
         });
     }
 
+    /**
+     * Cancels the current OTP code request and handles the response.
+     * Shows a progress bar while the cancellation request is in progress and navigates to the Dashboard upon success or failure.
+     */
     private void cancelOtpCode() {
         progressBar.setVisibility(View.VISIBLE);
         BsaSdk.getInstance().getSdkService().cancelOtp(otpCode, new SdkResponseCallback<>() {
@@ -220,6 +271,10 @@ public class OtpAuth extends AppCompatActivity {
         });
     }
 
+    /**
+     * Handles the OTP authentication process. Shows a dialog while processing the authentication.
+     * Calls the `normalAuthenticator` method from the BSA SDK and navigates to the Dashboard upon success or failure.
+     */
     private void authenticateOtp() {
         // Show a dialog while processing
         AlertDialog progressDialog = new AlertDialog.Builder(this)
@@ -281,11 +336,21 @@ public class OtpAuth extends AppCompatActivity {
         builder.show();
     }
 
+    /**
+     * Displays a Snackbar with the provided message.
+     *
+     * @param message The message to display in the Snackbar.
+     */
     private void showSnackbar(String message) {
         View rootView = findViewById(android.R.id.content);
         Snackbar.make(rootView, message, Snackbar.LENGTH_LONG).show();
     }
 
+    /**
+     * Performs biometric authentication. If biometric authentication is available and configured,
+     * it will prompt the user to authenticate. Falls back to PIN/pattern authentication if biometric
+     * authentication is not set up or available.
+     */
     private void performBiometricAuth() {
         BiometricManager biometricManager = BiometricManager.from(this);
         if (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS) {
@@ -328,6 +393,10 @@ public class OtpAuth extends AppCompatActivity {
         }
     }
 
+    /**
+     * Placeholder method for performing PIN/pattern authentication.
+     * Currently, this method does not have any implementation.
+     */
     private void performPinPatternAuth() {
         KeyguardManager keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
 

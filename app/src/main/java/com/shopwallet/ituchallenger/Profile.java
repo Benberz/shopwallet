@@ -40,6 +40,14 @@ public class Profile extends AppCompatActivity {
     private static final String TAG = "ProfileClass";
     HashMap<String, Object> storedInputData;
 
+    /**
+     * Called when the activity is first created. This method sets up the user interface,
+     * initializes the toolbar, retrieves and displays the user's profile information,
+     * and configures the card click listeners for navigating to different sections.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after previously being shut down,
+     *                           this Bundle contains the most recent data.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,6 +93,14 @@ public class Profile extends AppCompatActivity {
         });
     }
 
+    /**
+     * Handles the selection of options in the options menu.
+     * Specifically handles the action when the back button is pressed in the toolbar.
+     *
+     * @param item The menu item that was selected.
+     * @return boolean Return false to allow normal menu processing to proceed,
+     * true to consume it here.
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
@@ -95,6 +111,13 @@ public class Profile extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * Performs authentication based on the stored authentication type.
+     * Depending on the authType, it may initiate biometric authentication or PIN/pattern authentication.
+     * On successful authentication, it runs the provided success action.
+     *
+     * @param onSuccess The action to perform on successful authentication.
+     */
     private void performAuthenticationAndNavigate(Runnable onSuccess) {
         String authType = (String) storedInputData.get("authType");
         String userKey = (String) storedInputData.get("userKey");
@@ -165,6 +188,13 @@ public class Profile extends AppCompatActivity {
         }
     }
 
+    /**
+     * Calls the in-app authenticator using BSA SDK to perform an additional layer of authentication.
+     * If successful, it runs the provided success action.
+     *
+     * @param userKey   The user's unique key for authentication.
+     * @param onSuccess The action to perform on successful authentication.
+     */
     private void callInAppAuthenticator(String userKey, Runnable onSuccess) {
 
         // Show a dialog while processing
@@ -198,6 +228,10 @@ public class Profile extends AppCompatActivity {
         });
     }
 
+    /**
+     * Displays a dialog for account deletion confirmation.
+     * If confirmed, it deletes the user's account using BSA SDK and navigates back to the sign-up screen.
+     */
     private void showDeleteAccountDialog() {
         BottomSheetDialog dialog = new BottomSheetDialog(this, R.style.BottomSheetDialogTheme);
         View view = getLayoutInflater().inflate(R.layout.dialog_delete_account, findViewById(android.R.id.content), false);
@@ -217,23 +251,37 @@ public class Profile extends AppCompatActivity {
         dialog.show();
     }
 
+    /**
+     * Deletes the user account using the BsaSdk service and handles the response.
+     *
+     * If the account deletion is successful, the method updates the wallet holder's status in Firestore,
+     * clears user preferences from secure storage, and navigates the user back to the account creation page.
+     * If the deletion fails, an error message is displayed.
+     */
     private void deleteUserAccount() {
+        // Call the deleteUser method from the BsaSdk service
         BsaSdk.getInstance().getSdkService().deleteUser(new SdkResponseCallback<>() {
+
             @Override
             public void onSuccess(DeleteUserResponse response) {
+                // Check if the response is valid and if the deletion was successful
                 if (response != null && response.getRtCode() == 0) {
                     Log.d(TAG, "Account deletion successful: " + response.rtMsg);
+
+                    // Show a success message to the user
                     Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Account Deleted", Snackbar.LENGTH_LONG);
                     snackbar.setAnchorView(findViewById(R.id.dashboardBottomNavigation)); // Adjust if you have a BottomNavigationView
                     snackbar.show();
 
+                    // Update the wallet holder status in Firestore
                     FirestoreHelper firestoreHelper = new FirestoreHelper();
                     String holderRefId = (String) storedInputData.get("holderRefId");
                     firestoreHelper.updateWalletHolderStatus(holderRefId);
 
+                    // Clear all user preferences from secure storage
                     SecureStorageUtil.clearAllUserPreferences(Profile.this);
 
-                    // Navigate back to Create page
+                    // Navigate the user back to the Create Account page
                     new Handler().postDelayed(() -> {
                         Intent intent = new Intent(Profile.this, CreateAccount.class);
                         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -241,6 +289,7 @@ public class Profile extends AppCompatActivity {
                         finish(); // Finish the current activity
                     }, Snackbar.LENGTH_LONG + 2000); // Delay in milliseconds
                 } else {
+                    // Handle case where deletion response is invalid or deletion failed
                     assert response != null;
                     Log.e(TAG, "Account deletion failed: " + response.rtMsg);
                     Snackbar.make(findViewById(android.R.id.content), "Account deletion failed: " + response.rtMsg, Snackbar.LENGTH_SHORT).show();
@@ -249,6 +298,7 @@ public class Profile extends AppCompatActivity {
 
             @Override
             public void onFailed(ErrorResult errorResult) {
+                // Handle case where the account deletion request failed
                 Log.e(TAG, "Account deletion failed: " + errorResult.getErrorMessage());
                 Snackbar.make(findViewById(android.R.id.content), "Account deletion failed: " + errorResult.getErrorMessage(), Snackbar.LENGTH_SHORT).show();
             }
