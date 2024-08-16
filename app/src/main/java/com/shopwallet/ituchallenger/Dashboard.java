@@ -42,6 +42,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -71,6 +72,7 @@ public class Dashboard extends AppCompatActivity {
     private static final String TAG = "DashboardClass";
     private HashMap<String, Object> inputData;
     private Runnable pendingAction;
+    private Runnable pendingActionFailure;
     private ActivityResultLauncher<Intent> deviceCredentialLauncher;
 
     private FirebaseFirestore db;
@@ -140,6 +142,7 @@ public class Dashboard extends AppCompatActivity {
             }
         }
     };
+    private SwitchMaterial showTransactionSwitch;
 
     @SuppressLint("NonConstantResourceId")
     @Override
@@ -184,6 +187,9 @@ public class Dashboard extends AppCompatActivity {
                         Log.e(TAG, "Device credential authentication failed");
                         Snackbar.make(findViewById(android.R.id.content), "Authentication failed", Snackbar.LENGTH_SHORT).show();
                         // sendAuthResultToService(false); // Authentication failed
+                        if (pendingActionFailure != null) {
+                            pendingActionFailure.run(); // Execute the failure callback if provided
+                        }
                     }
                 });
 
@@ -330,6 +336,8 @@ public class Dashboard extends AppCompatActivity {
 
         // Reload card holder info and recent transactions
         getCardHolderInfo();
+
+        showTransactionSwitch.setChecked(false);
         setupRecentTransactionsList();
 
         // Hide the progress bar once loading is complete
@@ -431,9 +439,9 @@ public class Dashboard extends AppCompatActivity {
             String authType = (String) inputData.get("authType");
             if (authType != null) {
                 if (authType.equals("3")) {
-                    authenticateBiometric(() -> callInAppAuthenticator(userKey, this::showBalanceBottomSheet));
+                    authenticateBiometric(() -> callInAppAuthenticator(userKey, this::showBalanceBottomSheet, null), null);
                 } else if (authType.equals("4")) {
-                    authenticateDeviceCredential(() -> callInAppAuthenticator(userKey, this::showBalanceBottomSheet));
+                    authenticateDeviceCredential(() -> callInAppAuthenticator(userKey, this::showBalanceBottomSheet, null), null);
                 } else {
                     Log.e(TAG, "Unknown authentication type");
                     Snackbar.make(findViewById(android.R.id.content), "Unknown authentication type", Snackbar.LENGTH_SHORT).show();
@@ -545,6 +553,46 @@ public class Dashboard extends AppCompatActivity {
         ArrayList<Transaction> transactions = new ArrayList<>();
         TransactionAdapter adapter = new TransactionAdapter(Dashboard.this, transactions);
         transactionsListView.setAdapter(adapter);
+
+        // Find the SwitchMaterial widget
+        showTransactionSwitch = findViewById(R.id.showTransactionSwitch);
+
+        // Set up the listener for the switch to toggle masking of transaction details
+        showTransactionSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                // Determine the authentication type from input data
+                String authType = (String) inputData.get("authType");
+                if (authType != null) {
+                    if (authType.equals("3")) {
+                        authenticateBiometric(() -> callInAppAuthenticator(userKey, () -> {
+                            adapter.setMaskTransactionDetails(true); // Mask transaction details
+                            showTransactionSwitch.setText(R.string.show_transactions);
+                            },
+                                () -> runOnUiThread(() -> showTransactionSwitch.setChecked(false))), () -> showTransactionSwitch.setChecked(false));
+                    } else if (authType.equals("4")) {
+                        authenticateDeviceCredential(() -> callInAppAuthenticator(userKey, () -> {
+                            adapter.setMaskTransactionDetails(true); // Mask transaction details
+                            showTransactionSwitch.setText(R.string.show_transactions);
+                            }, ()-> runOnUiThread(() -> showTransactionSwitch.setChecked(false))),
+                                () -> showTransactionSwitch.setChecked(false));
+                    } else {
+                        Log.e(TAG, "Unknown authentication type");
+                        Snackbar.make(findViewById(android.R.id.content), "Unknown authentication type", Snackbar.LENGTH_SHORT).show();
+                        // Optionally, you can reset the switch to the off position if authentication fails or is unknown
+                        showTransactionSwitch.setChecked(false);
+                    }
+                } else {
+                    Log.e(TAG, "Invalid authentication type data");
+                    Snackbar.make(findViewById(android.R.id.content), "Invalid authentication type data", Snackbar.LENGTH_SHORT).show();
+                    // Reset the switch to the off position
+                    showTransactionSwitch.setChecked(false);
+                }
+
+            } else {
+                adapter.setMaskTransactionDetails(false); // Show transaction details
+                showTransactionSwitch.setText(R.string.hide_show_transactions);
+            }
+        });
 
         // Handle ListView scrolling to enable/disable SwipeRefreshLayout
         transactionsListView.setOnScrollListener(new AbsListView.OnScrollListener() {
@@ -704,10 +752,10 @@ public class Dashboard extends AppCompatActivity {
         if (authType != null) {
             if (authType.equals("3")) {
                 // Perform biometric authentication
-                authenticateBiometric(() -> callInAppAuthenticator(userKey, () -> startActivity(new Intent(Dashboard.this, destinationActivity))));
+                authenticateBiometric(() -> callInAppAuthenticator(userKey, () -> startActivity(new Intent(Dashboard.this, destinationActivity)), null), null);
             } else if (authType.equals("4")) {
                 // Perform device credential authentication
-                authenticateDeviceCredential(() -> callInAppAuthenticator(userKey, () -> startActivity(new Intent(Dashboard.this, destinationActivity))));
+                authenticateDeviceCredential(() -> callInAppAuthenticator(userKey, () -> startActivity(new Intent(Dashboard.this, destinationActivity)), null), null);
             } else {
                 // Handle unknown authentication type
                 Log.e(TAG, "Unknown authentication type");
@@ -727,7 +775,7 @@ public class Dashboard extends AppCompatActivity {
      *
      * @param onSuccess Runnable to be executed upon successful biometric authentication.
      */
-    private void authenticateBiometric(Runnable onSuccess) {
+    private void authenticateBiometric(Runnable onSuccess, Runnable onFailure) {
         BiometricManager biometricManager = BiometricManager.from(this);
         if (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS) {
             Executor executor = ContextCompat.getMainExecutor(this);
@@ -738,6 +786,7 @@ public class Dashboard extends AppCompatActivity {
                     // Log and display biometric authentication error
                     Log.e(TAG, "Biometric authentication error: " + errString);
                     Snackbar.make(findViewById(android.R.id.content), "Biometric Authentication error: " + errString, Snackbar.LENGTH_SHORT).show();
+                    if (onFailure != null) onFailure.run(); // Execute the failure callback if provided
                 }
 
                 @Override
@@ -753,6 +802,7 @@ public class Dashboard extends AppCompatActivity {
                     // Log and display biometric authentication failure
                     Log.e(TAG, "Biometric authentication failed");
                     Snackbar.make(findViewById(android.R.id.content), "Biometric Authentication failed", Snackbar.LENGTH_SHORT).show();
+                    if (onFailure != null) onFailure.run(); // Execute the failure callback if provided
                 }
             });
 
@@ -769,6 +819,7 @@ public class Dashboard extends AppCompatActivity {
             // Log and display if biometric authentication is not available
             Log.e(TAG, "Biometric authentication not available");
             Snackbar.make(findViewById(android.R.id.content), "Biometric authentication not available", Snackbar.LENGTH_SHORT).show();
+            if (onFailure != null) onFailure.run(); // Execute the failure callback if provided
         }
     }
 
@@ -780,17 +831,19 @@ public class Dashboard extends AppCompatActivity {
      *
      * @param onSuccess Runnable to be executed upon successful device credential authentication.
      */
-    private void authenticateDeviceCredential(Runnable onSuccess) {
+    private void authenticateDeviceCredential(Runnable onSuccess, Runnable onFailure) {
         KeyguardManager keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
         if (keyguardManager.isDeviceSecure()) {
             // Create and launch the device credential confirmation intent
             Intent intent = keyguardManager.createConfirmDeviceCredentialIntent("Authentication required", "Authenticate to proceed");
             pendingAction = onSuccess; // Store the action to be executed after successful authentication
+            if (pendingActionFailure != null) pendingActionFailure = onFailure; // Store the action to be executed after successful authentication
             deviceCredentialLauncher.launch(intent);
         } else {
             // Log and display if the device is not secure
             Log.e(TAG, "Device is not secure");
             Snackbar.make(findViewById(android.R.id.content), "Device is not secure", Snackbar.LENGTH_SHORT).show();
+            if (pendingActionFailure != null) pendingActionFailure.run(); // Execute the failure callback if provided
         }
     }
 
@@ -802,7 +855,7 @@ public class Dashboard extends AppCompatActivity {
      * @param userKey The key used for authentication.
      * @param success Runnable to be executed upon successful authentication.
      */
-    private void callInAppAuthenticator(String userKey, Runnable success) {
+    private void callInAppAuthenticator(String userKey, Runnable success, Runnable onFailure) {
         // Create and show a progress dialog while authentication is in progress
         AlertDialog progressDialog = new AlertDialog.Builder(this)
                 .setView(LayoutInflater.from(this).inflate(R.layout.dialog_progress, findViewById(android.R.id.content), false))
@@ -841,6 +894,8 @@ public class Dashboard extends AppCompatActivity {
                 Log.e(TAG, "In-app authentication failed: " + errorResult.getErrorMessage() + " | code: " + errorResult.getErrorCode());
                 // Handle the authentication error
                 runOnUiThread(() -> handleAuthError(errorResult.getErrorCode()));
+                if (onFailure != null) onFailure.run();
+                // showTransactionSwitch.setChecked(false);
             }
         });
     }

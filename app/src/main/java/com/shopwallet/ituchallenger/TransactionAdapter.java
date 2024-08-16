@@ -1,6 +1,7 @@
 package com.shopwallet.ituchallenger;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,6 +9,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.core.content.ContextCompat;
 import java.util.ArrayList;
 
 /**
@@ -22,6 +24,9 @@ public class TransactionAdapter extends ArrayAdapter<Transaction> {
 
     // Constant representing the view type for an empty view
     private static final int VIEW_TYPE_EMPTY = 1;
+
+    private boolean maskTransactionDetails; // New variable to track masking state
+
 
     /**
      * Constructor for TransactionAdapter.
@@ -111,10 +116,35 @@ public class TransactionAdapter extends ArrayAdapter<Transaction> {
             amount.setText(transaction.getAmount());
             date.setText(transaction.getDatetime());
 
+            // Mask or unmask the transaction amount based on the maskTransactionDetails flag
+            if (maskTransactionDetails) {
+
+                // Show actual details
+                title.setText(transaction.getTitle());
+                amount.setText(transaction.getAmount());
+                date.setText(transaction.getDatetime());
+                icon.setImageResource(transaction.getIconResId());
+
+            } else {
+
+                // Mask all details
+                title.setText("****"); // Mask the title
+                amount.setText("****"); // Mask the amount
+                date.setText("****"); // Mask the date
+                // icon.setImageResource(R.drawable.ic_baseline_lock_24); // Set a generic icon for masked details
+                Log.d("TransactionAdapter", "Setting lock icon for masked transaction details");
+                icon.setImageDrawable(ContextCompat.getDrawable(icon.getContext(), R.drawable.ic_baseline_lock_24));
+            }
+
             // Set the icon resource for the transaction type
             icon.setImageResource(transaction.getIconResId());
         }
-
         return convertView;
+    }
+
+    // Method to update the maskTransactionDetails flag
+    public void setMaskTransactionDetails(boolean maskTransactionDetails) {
+        this.maskTransactionDetails = maskTransactionDetails;
+        notifyDataSetChanged(); // Notify the adapter to refresh the views
     }
 }

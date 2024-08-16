@@ -163,4 +163,7 @@
     <string name="skip">Skip</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="show">Show</string>
+    <string name="show_transactions">Show Transactions</string>
+    <string name="hide_show_transactions">Hide Transactions</string>
 </resources>

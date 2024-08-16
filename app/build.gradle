@@ -20,6 +20,8 @@ android {
         buildConfigField "String", "API_SERVER_URL", "\"${project.API_SERVER_URL}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        vectorDrawables.useSupportLibrary = true
     }
 
     buildTypes {
